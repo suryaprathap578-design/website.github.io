@@ -16,10 +16,10 @@ window.SITE_CONFIG = {
   company: 'SUBHA INFRA',
   phone: '+91 9844334488',            // used for tel: links (no spaces)
   phoneDisplay: '+91 9844334488',   // how the number is shown on the page
-  whatsapp: '+91 9844334488',          // country code + number, digits only
+  whatsapp: '+91 7349249727',          // country code + number, digits only
   whatsappMessage: "Hello SUBHA INFRA, I'd like to discuss a project.",
   email: 'info@subhainfra.com',
-  address: 'Sahakar Nagar, Bengaluru, Karnataka, India',
+  address: ' 2457, 11th Cross, 13th Main, Sahakar Nagar, Bengaluru, Karnataka, India',
   mapQuery: 'Sahakar Nagar, Bengaluru, Karnataka',   // Google Maps search text
   website: 'localhost:9090',
 
@@ -33,19 +33,24 @@ window.SITE_CONFIG = {
     twitter:   'https://x.com/'
   },
 
-  /* ---------- Enquiry form ----------
-     Paste a form-service endpoint (Formspree, Getform, Basin or your CRM
-     webhook) to receive enquiries online. While empty, the form prepares
-     the enquiry for the visitor to send by email or WhatsApp. */
+  /* ---------- Enquiry form & pop-up ----------
+     Enquiries from the contact form and the pop-up are saved in the CMS
+     (Google Sheet tab "enquiries", admin panel > Enquiries) and emailed to
+     you, using the cmsApi address below. Optional: paste a Formspree /
+     CRM webhook in formEndpoint to send them there instead.
+     enquiryPopup: false turns the automatic pop-up off (buttons still open it).
+     enquiryPopupDelay: milliseconds after a visitor arrives. */
   formEndpoint: '',
+  enquiryPopup: true,
+  enquiryPopupDelay: 5000,
 
   /* ---------- Image CMS (Google Apps Script) ----------
      Paste the Apps Script web app URL (ends in /exec) to load images
      chosen in the admin panel. While empty, the built-in images show.
      cmsCacheMinutes: how long a visitor's browser keeps the image list
      before checking for newly published changes. */
-  cmsApi: 'https://script.google.com/macros/s/AKfycby_T8CrvB89uXSqAU-mfbmil0Kem_LIbFU5hbdBg9HbWqTSQXhG38OrUz3kb1AIY5KCHg/exec',
-  cmsCacheMinutes: 0,
+  cmsApi: 'https://script.google.com/macros/s/AKfycbyC6PLzEP95Ei_Z_73vTDHjOfR1E7UIzG1CFYfkk7hukCwVoDluDoj3TMKlJssj2ILIog/exec',
+  cmsCacheMinutes: 5,   // 0 while testing (always fresh), 5–10 for the live site (faster pages)
 
   /* ---------- Homepage hero ---------- */
   heroInterval: 3000,   // milliseconds between hero images

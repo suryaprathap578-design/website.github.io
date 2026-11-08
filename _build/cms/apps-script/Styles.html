@@ -286,4 +286,31 @@ textarea.in{min-height:80px;resize:vertical}
   .prj-ph{grid-template-columns:22px 60px 1fr;}
   .prj-ph select,.prj-ph .icon-btn{grid-column:3}
 }
-</style>
+
+/* ---------- dashboard guide: "What would you like to change?" ---------- */
+.guide{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.gd{display:flex;flex-direction:column;text-align:left;padding:0;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .2s,box-shadow .2s,transform .2s}
+.gd:hover{border-color:var(--gold);box-shadow:0 10px 26px -14px rgba(16,29,43,.35);transform:translateY(-2px)}
+.gd-img{display:grid;place-items:center;aspect-ratio:16/8;background:var(--gold-bg);color:var(--gold);overflow:hidden}
+.gd-img img{width:100%;height:100%;object-fit:cover;display:block}
+.gd-img svg{width:34px;height:34px}
+.gd-b{display:grid;gap:3px;padding:11px 13px 13px}
+.gd-b b{font:700 14px/1.3 Manrope,Inter,sans-serif;color:var(--navy)}
+.gd-b small{font-size:12.5px;color:var(--muted);line-height:1.4}
+.gd-b em{font-style:normal;font-size:11.5px;color:var(--gold);font-weight:600;margin-top:2px}
+.steps3{display:grid;gap:10px;margin-top:16px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.steps3>div{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;background:var(--soft);border-radius:10px;font-size:13px}
+.steps3 b:first-child{display:grid;place-items:center;flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--navy);color:var(--gold-2);font-size:12px}
+/* picker: the image currently on the website */
+.pk-cur{display:flex;gap:14px;align-items:center;padding:10px;border:1px solid var(--gold);background:var(--gold-bg);border-radius:10px;margin-bottom:12px}
+.pk-cur img{width:150px;aspect-ratio:4/3;object-fit:cover;border-radius:8px;flex-shrink:0;background:#fff}
+/* enquiries */
+.enq-list{display:grid;gap:12px}
+.enq{padding:0;overflow:hidden}
+.enq.new{border-left:4px solid var(--gold)}
+.enq-h{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line)}
+.enq-h b{font-size:15px;color:var(--navy)}
+.enq-b{display:grid;gap:10px;padding:12px 16px 16px}
+.enq-c{display:flex;flex-wrap:wrap;gap:8px}
+.enq-c .btn svg{width:14px;height:14px}
+.enq-msg{white-space:pre-wrap;padding:10px 12px;background:var(--soft);border-radius:8px;font-size:13.5px}</style>

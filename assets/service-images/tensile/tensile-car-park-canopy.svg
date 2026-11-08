@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" width="1600" height="1000" role="img" aria-labelledby="t d">
+  <title id="t">Cantilever tensile fabric car-park canopy</title>
+  <desc id="d">Illustration of a cantilevered PVC membrane car-parking shade structure on steel columns with scalloped catenary edges — tensile fabric structure design by SUBHA INFRA.</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8DB6D6"/><stop offset=".6" stop-color="#D6E4EC"/><stop offset="1" stop-color="#EEF0EC"/></linearGradient>
+    <linearGradient id="road" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9A9EA2"/><stop offset="1" stop-color="#6E7378"/></linearGradient>
+    <linearGradient id="mem" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".55" stop-color="#E7EBEE"/><stop offset="1" stop-color="#C3CBD2"/></linearGradient>
+    <linearGradient id="under" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B9C2CA"/><stop offset="1" stop-color="#E6EAED"/></linearGradient>
+    <linearGradient id="bld" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E9E5DD"/><stop offset="1" stop-color="#D5CEC2"/></linearGradient>
+  </defs>
+  <rect width="1600" height="1000" fill="url(#sky)"/>
+  <!-- office building -->
+  <rect x="180" y="250" width="1240" height="370" fill="url(#bld)"/>
+  <g fill="#93A7B8" opacity=".9"><rect x="220" y="290" width="1160" height="70"/><rect x="220" y="400" width="1160" height="70"/><rect x="220" y="510" width="1160" height="70"/></g>
+  <g stroke="#E9E5DD" stroke-width="6"><path d="M365 290V580M510 290V580M655 290V580M800 290V580M945 290V580M1090 290V580M1235 290V580"/></g>
+  <g fill="#7C9B74"><circle cx="110" cy="590" r="70"/><circle cx="60" cy="620" r="55"/><circle cx="1500" cy="585" r="72"/><circle cx="1560" cy="615" r="56"/></g>
+  <!-- paving & bays -->
+  <rect y="620" width="1600" height="380" fill="url(#road)"/>
+  <g stroke="#EDEDED" stroke-width="5" opacity=".85"><path d="M40 1000L150 680M330 1000L380 680M620 1000L610 680M910 1000L840 680M1200 1000L1070 680M1490 1000L1300 680"/></g>
+  <rect y="620" width="1600" height="18" fill="#B9B3A6"/>
+  <!-- canopy shadow -->
+  <path d="M110 760 Q260 730 400 760 Q520 730 640 760 Q760 730 880 760 Q1000 730 1120 760 Q1240 730 1360 760 Q1430 742 1500 760 L1500 840 L110 840Z" fill="#2F3338" opacity=".2"/>
+  <!-- columns & back stays -->
+  <g stroke="#26303A" stroke-linecap="round"><path d="M150 330V700M410 330V700M670 330V700M930 330V700M1190 330V700M1450 330V700" stroke-width="16"/></g>
+  <!-- cars -->
+  <g>
+    <g transform="translate(205 610)"><rect x="0" y="34" width="170" height="52" rx="18" fill="#B23A2E"/><path d="M28 36 Q50 0 92 0 Q130 0 146 36Z" fill="#8E2E25"/><path d="M44 34 Q60 10 90 10 Q120 10 132 34Z" fill="#A9C1D3"/><circle cx="40" cy="88" r="17" fill="#1C1F23"/><circle cx="132" cy="88" r="17" fill="#1C1F23"/></g>
+    <g transform="translate(465 610)"><rect x="0" y="34" width="170" height="52" rx="18" fill="#F1F1EF"/><path d="M28 36 Q50 0 92 0 Q130 0 146 36Z" fill="#DADAD6"/><path d="M44 34 Q60 10 90 10 Q120 10 132 34Z" fill="#A9C1D3"/><circle cx="40" cy="88" r="17" fill="#1C1F23"/><circle cx="132" cy="88" r="17" fill="#1C1F23"/></g>
+    <g transform="translate(985 610)"><rect x="0" y="34" width="170" height="52" rx="18" fill="#2D3E52"/><path d="M28 36 Q50 0 92 0 Q130 0 146 36Z" fill="#22303F"/><path d="M44 34 Q60 10 90 10 Q120 10 132 34Z" fill="#A9C1D3"/><circle cx="40" cy="88" r="17" fill="#1C1F23"/><circle cx="132" cy="88" r="17" fill="#1C1F23"/></g>
+    <g transform="translate(1245 610)"><rect x="0" y="34" width="170" height="52" rx="18" fill="#8C8F93"/><path d="M28 36 Q50 0 92 0 Q130 0 146 36Z" fill="#74777B"/><path d="M44 34 Q60 10 90 10 Q120 10 132 34Z" fill="#A9C1D3"/><circle cx="40" cy="88" r="17" fill="#1C1F23"/><circle cx="132" cy="88" r="17" fill="#1C1F23"/></g>
+    <!-- EV charger -->
+    <rect x="760" y="610" width="36" height="88" rx="6" fill="#26303A"/><rect x="767" y="622" width="22" height="18" rx="3" fill="#7FD1AE"/>
+  </g>
+  <!-- membrane bays: top plane + underside + scalloped front edge -->
+  <g stroke="#56616C" stroke-width="2.5">
+    <path d="M150 330 L410 330 L440 410 Q295 350 180 410Z" fill="url(#mem)"/>
+    <path d="M410 330 L670 330 L700 410 Q555 350 440 410Z" fill="url(#mem)"/>
+    <path d="M670 330 L930 330 L960 410 Q815 350 700 410Z" fill="url(#mem)"/>
+    <path d="M930 330 L1190 330 L1220 410 Q1075 350 960 410Z" fill="url(#mem)"/>
+    <path d="M1190 330 L1450 330 L1480 410 Q1335 350 1220 410Z" fill="url(#mem)"/>
+  </g>
+  <g fill="url(#under)" opacity=".85">
+    <path d="M180 410 Q295 350 440 410 L440 422 Q295 368 180 422Z"/><path d="M440 410 Q555 350 700 410 L700 422 Q555 368 440 422Z"/><path d="M700 410 Q815 350 960 410 L960 422 Q815 368 700 422Z"/><path d="M960 410 Q1075 350 1220 410 L1220 422 Q1075 368 960 422Z"/><path d="M1220 410 Q1335 350 1480 410 L1480 422 Q1335 368 1220 422Z"/>
+  </g>
+  <!-- cantilever booms -->
+  <g stroke="#26303A" stroke-width="9" stroke-linecap="round"><path d="M150 330L180 412M410 330L440 412M670 330L700 412M930 330L960 412M1190 330L1220 412M1450 330L1480 412"/></g>
+  <g stroke="#26303A" stroke-width="3"><path d="M150 330L120 300M410 330L380 300M670 330L640 300M930 330L900 300M1190 330L1160 300M1450 330L1420 300"/></g>
+</svg>

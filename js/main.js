@@ -127,6 +127,8 @@
           $('.hh-num', aside).textContent = String(i + 1).padStart(2, '0');
           $('.hh-caption small', aside).textContent = slides[i].dataset.cat || '';
           $('.hh-caption b', aside).textContent = slides[i].dataset.title || '';
+          const cap = $('a.hh-caption', aside), href = slides[i].dataset.href;
+          if (cap) { if (href) { cap.href = asset(href); cap.removeAttribute('aria-disabled'); } else { cap.removeAttribute('href'); } }
           aside.classList.remove('swap');
         }, 420);
       }
@@ -215,6 +217,14 @@
     if (!select(location.hash.slice(1), true)) select(tabs[0].dataset.tab);
     addEventListener('hashchange', fromHash);
   }
+
+  /* ---------- Package tiers: expand / collapse the full specification ---------- */
+  $$('[data-acc-all]').forEach(btn => {
+    const tier = btn.closest('.tier'), label = $('span', btn);
+    const sync = () => { const all = $$('details.acc', tier); const open = all.length && all.every(d => d.open); label.textContent = open ? 'Collapse all' : 'Expand all'; };
+    btn.addEventListener('click', () => { const all = $$('details.acc', tier); const open = !all.every(d => d.open); all.forEach(d => { d.open = open; }); sync(); });
+    $$('details.acc', tier).forEach(d => d.addEventListener('toggle', sync));
+  });
 
   /* ---------- Cost estimator ---------- */
   const calc = $('[data-calc]');
@@ -392,7 +402,7 @@
       const a = e.target.closest('a');
       if (!a || e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
       const href = a.getAttribute('href') || '';
-      if (a.target || a.hasAttribute('download') || a.dataset.lb !== undefined || href.charAt(0) === '#' || /^[a-z]+:/i.test(href)) return;
+      if (a.target || a.hasAttribute('download') || a.dataset.lb !== undefined || (a.hasAttribute('data-enquire') && !document.getElementById('enquiry')) || href.charAt(0) === '#' || /^[a-z]+:/i.test(href)) return;
       const url = new URL(a.href, location.href);
       if (url.origin !== location.origin || url.pathname === location.pathname) return;
       if (/\.[a-z0-9]{2,5}$/i.test(url.pathname) && !/\.html$/i.test(url.pathname)) return;
@@ -403,106 +413,153 @@
   }
   addEventListener('pageshow', () => veil && veil.classList.remove('on'));
 
-  /* ---------- Enquiry form ---------- */
+  /* ---------- Enquiries (contact form + pop-up) ----------
+     Sends to CFG.formEndpoint if set, otherwise to the Apps Script backend
+     (CFG.cmsApi?api=enquiry, saved in the CMS "Enquiries" sheet + emailed).
+     Without either, the visitor gets ready-to-send email / WhatsApp links. */
+  const ENQ_API = String(CFG.formEndpoint || '').trim() || (String(CFG.cmsApi || '').trim() ? String(CFG.cmsApi).trim() + (String(CFG.cmsApi).indexOf('?') > -1 ? '&' : '?') + 'api=enquiry' : '');
+  const SERVICES = ['Architectural design', 'Interior design', 'Structural design & engineering', 'Design & build / construction', 'PEB structures', 'Steel, roofing & cladding', 'Facades & skylights', 'Tensile fabric structure', 'Other'];
+  const validPhone = v => String(v || '').replace(/[^\d]/g, '').length >= 10;
+  const validEmail = v => !v || /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
+  const enquiryText = p => `New enquiry — ${CFG.company || 'SUBHA INFRA'} website\n\nName: ${p.name}\nMobile: ${p.phone}\nEmail: ${p.email || '—'}\nService: ${p.service || '—'}\nLocation: ${p.location || '—'}\n\n${p.message || ''}`;
+  async function sendEnquiry(p) {
+    p.page = location.pathname; p.ref = document.referrer.slice(0, 200);
+    if (!ENQ_API) return { offline: true };
+    const isGas = /script\.google(usercontent)?\.com/.test(ENQ_API);
+    const res = isGas
+      ? await fetch(ENQ_API, { method: 'POST', body: JSON.stringify(p), credentials: 'omit' })   // text/plain: no CORS pre-flight
+      : await fetch(ENQ_API, { method: 'POST', body: JSON.stringify(p), headers: { 'Content-Type': 'application/json', Accept: 'application/json' } });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    if (isGas) { const d = await res.json(); if (!d || !d.ok) throw new Error((d && d.error) || 'Not saved'); }
+    try { localStorage.setItem('subha-eq', JSON.stringify({ t: Date.now(), done: 1 })); } catch (e) { }
+    return { ok: true };
+  }
+  const offlineHtml = p => `<h3>Your enquiry is ready to send</h3><p>Choose how you would like to send it — your details are already filled in.</p><div class="actions"><a class="btn btn-bronze" href="mailto:${esc(CFG.email || '')}?subject=${encodeURIComponent('Project enquiry — ' + p.name)}&body=${encodeURIComponent(enquiryText(p))}">Send by email</a><a class="btn btn-line" href="${waLink(enquiryText(p))}" target="_blank" rel="noopener">Send on WhatsApp</a></div>`;
+  const thanksHtml = name => `<h3>Thank you${name ? ', ' + esc(String(name).split(' ')[0]) : ''}.</h3><p>Your enquiry has reached our team. We will call you back shortly — usually within one working day.</p><div class="actions"><a class="btn btn-line" href="${waLink()}" target="_blank" rel="noopener">Chat on WhatsApp</a></div>`;
+  const failHtml = p => `<h3>We couldn't send it online just now</h3><p>Please send it by email or WhatsApp instead — your details are already filled in — or call us on <a href="tel:${esc(CFG.phone || '')}">${esc(CFG.phoneDisplay || CFG.phone || '')}</a>.</p><div class="actions"><a class="btn btn-bronze" href="mailto:${esc(CFG.email || '')}?subject=${encodeURIComponent('Project enquiry — ' + p.name)}&body=${encodeURIComponent(enquiryText(p))}">Send by email</a><a class="btn btn-line" href="${waLink(enquiryText(p))}" target="_blank" rel="noopener">Send on WhatsApp</a></div>`;
+
+  /* Contact page form */
   const form = $('#enquiry');
-  if (form) initForm(form);
-
-  function initForm(form) {
-    const steps = $$('.fstep', form);
-    const ind = $$('.steps-ind li', form.parentElement);
-    const prev = $('[data-prev]', form), next = $('[data-next]', form), submit = $('[data-submit]', form);
+  if (form) {
     const result = $('#form-result');
-    let cur = 0;
-
     const qs = new URLSearchParams(location.search);
-    const norm = s => String(s || '').toLowerCase().replace(/s$/, '');
-    const pre = (name, val) => { if (!val) return; $$(`[name="${name}"]`, form).forEach(i => { if (norm(i.value) === norm(val) || (i.dataset.key && i.dataset.key === val)) i.checked = true; }); };
-    pre('category', qs.get('category'));
-    pre('services', qs.get('service'));
-    if (qs.get('package')) { const sel = $('[name="package"]', form); if (sel) sel.value = qs.get('package'); }
-
-    const showStep = n => {
-      cur = n;
-      steps.forEach((s, k) => s.classList.toggle('on', k === n));
-      ind.forEach((li, k) => { li.classList.toggle('on', k === n); li.classList.toggle('done', k < n); });
-      prev.hidden = n === 0; next.hidden = n === steps.length - 1; submit.hidden = n !== steps.length - 1;
-      if (n === steps.length - 1) buildReview();
-      const top = form.parentElement.getBoundingClientRect().top + scrollY - 110;
-      if (scrollY > top) scrollTo({ top, behavior: reduce ? 'auto' : 'smooth' });
-    };
-    const setErr = (field, msg) => { field.classList.toggle('invalid', !!msg); const e = $('.err', field); if (e) e.textContent = msg || ''; };
-    const validateStep = n => {
-      let ok = true, first = null;
-      $$('.field', steps[n]).forEach(f => {
-        const inp = $('input, select, textarea', f);
-        let msg = '';
-        if (f.hasAttribute('data-group')) { if (f.hasAttribute('data-required') && !$$('input:checked', f).length) msg = 'Please choose at least one option.'; }
-        else if (inp && inp.type !== 'file') {
-          const v = inp.value.trim();
-          if (inp.required && !v) msg = 'This field is required.';
-          else if (v && inp.type === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) msg = 'Enter a valid email address.';
-          else if (v && inp.type === 'tel' && v.replace(/[^\d]/g, '').length < 8) msg = 'Enter a valid phone number.';
-          else if (v && inp.name === 'area' && !/^[\d,.\s]+$/.test(v)) msg = 'Use numbers only (square feet).';
-        } else if (inp && inp.type === 'file' && [...inp.files].some(x => x.size > 10 * 1024 * 1024)) msg = 'Each file must be under 10 MB.';
-        setErr(f, msg);
-        if (msg) { ok = false; if (!first) first = f; }
-      });
-      if (n === steps.length - 1) {
-        const c = $('[name="consent"]', form);
-        if (c && !c.checked) { ok = false; c.closest('.consent').style.color = '#A0412D'; first = first || c; } else if (c) c.closest('.consent').style.color = '';
-      }
-      if (first) ($('input, select, textarea', first) || first).focus();
-      return ok;
-    };
-    $$('input, select, textarea', form).forEach(i => i.addEventListener('input', () => { const f = i.closest('.field'); if (f && f.classList.contains('invalid')) setErr(f, ''); }));
-    next.addEventListener('click', () => { if (validateStep(cur)) showStep(cur + 1); });
-    prev.addEventListener('click', () => showStep(cur - 1));
-
-    const drop = $('.drop', form), fileIn = $('input[type="file"]', form), list = $('.file-list', form);
-    if (drop && fileIn) {
-      const renderFiles = () => { list.innerHTML = [...fileIn.files].map(f => `<span>${esc(f.name)} · ${(f.size / 1024 / 1024).toFixed(1)} MB</span>`).join(''); };
-      fileIn.addEventListener('change', renderFiles);
-      ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
-      ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
-      drop.addEventListener('drop', e => { if (e.dataTransfer.files.length) { fileIn.files = e.dataTransfer.files; renderFiles(); } });
+    const svcSel = $('[name="service"]', form);
+    const want = (qs.get('service') || '').toLowerCase(), cat = (qs.get('category') || '').toLowerCase();
+    if (svcSel && (want || cat)) {
+      const o = [...svcSel.options].find(x => (want && x.dataset.key === want) || (cat && x.value.toLowerCase().indexOf(cat.replace(/s$/, '')) > -1));
+      if (o) svcSel.value = o.value;
     }
-    const data = () => {
-      const fd = new FormData(form);
-      const get = k => (fd.getAll(k).filter(Boolean).join(', ') || '—');
-      const pkgSel = $('[name="package"]', form);
-      const pkgText = pkgSel && pkgSel.value ? pkgSel.options[pkgSel.selectedIndex].text : '—';
-      return { fd, rows: [['Name', get('name')], ['Company', get('company')], ['Phone', get('phone')], ['Email', get('email')], ['Category', get('category')], ['Location', get('location')], ['Area (sq ft)', get('area')], ['Services', get('services')], ['Package', pkgText], ['Budget', get('budget')], ['Files', [...(fileIn ? fileIn.files : [])].map(f => f.name).join(', ') || '—'], ['Description', get('description')]] };
-    };
-    const buildReview = () => { const box = $('.review', form); if (box) box.innerHTML = data().rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join(''); };
-
+    const pkg = qs.get('package'), msg = $('[name="message"]', form);
+    if (pkg && msg && !msg.value) msg.value = 'I am interested in the ' + pkg.replace(/-/g, ' ') + ' package. ';
+    const t0 = Date.now();
+    const setErr = (name, m) => { const f = $(`[name="${name}"]`, form).closest('.field'); f.classList.toggle('invalid', !!m); $('.err', f).textContent = m || ''; return !m; };
+    $$('input, select, textarea', form).forEach(i => i.addEventListener('input', () => { const f = i.closest('.field'); if (f && f.classList.contains('invalid')) { f.classList.remove('invalid'); } }));
     form.addEventListener('submit', async e => {
       e.preventDefault();
-      if (!validateStep(cur)) return;
-      const hp = $('.hp input', form); if (hp && hp.value) return;
-      const { fd, rows } = data();
-      const text = `New project enquiry — ${CFG.company || 'SUBHA INFRA'} website\n\n` + rows.map(([k, v]) => `${k}: ${v}`).join('\n');
+      const fd = new FormData(form), p = {}; ['name', 'phone', 'email', 'location', 'service', 'message', 'website'].forEach(k => { p[k] = String(fd.get(k) || '').trim(); });
+      const ok = [setErr('name', p.name ? '' : 'Please enter your name.'), setErr('phone', validPhone(p.phone) ? '' : 'Enter a valid 10-digit mobile number.'), setErr('email', validEmail(p.email) ? '' : 'Enter a valid email address.'), setErr('message', p.message ? '' : 'Tell us a little about your project.')];
+      if (ok.includes(false)) { const bad = $('.field.invalid input, .field.invalid textarea', form); if (bad) bad.focus(); return; }
+      if (p.website) return;   // bot
+      p.source = form.dataset.source || 'Contact page'; p.t = Date.now() - t0;
+      const btn = $('[data-submit]', form), lbl = $('span', btn);
+      btn.disabled = true; lbl.textContent = 'Sending…';
       result.hidden = false; result.className = 'form-result'; result.setAttribute('tabindex', '-1');
-      if (!CFG.formEndpoint) {
-        const mail = `mailto:${CFG.email}?subject=${encodeURIComponent('Project enquiry — ' + (fd.get('name') || ''))}&body=${encodeURIComponent(text)}`;
-        result.innerHTML = `<h3>Your enquiry is ready to send</h3><p>Online submission is not connected on this website yet, so nothing has been sent. Choose how you would like to send your enquiry — the details you entered are already filled in.${fileIn && fileIn.files.length ? ' Please attach your drawings to the email before sending.' : ''}</p><div class="actions"><a class="btn btn-bronze" href="${mail}">Send by email</a><a class="btn btn-line" href="${waLink(text)}" target="_blank" rel="noopener">Send on WhatsApp</a></div>`;
-        result.focus(); return;
-      }
-      submit.disabled = true; submit.querySelector('span').textContent = 'Sending…';
       try {
-        const res = await fetch(CFG.formEndpoint, { method: 'POST', body: fd, headers: { Accept: 'application/json' } });
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        result.classList.add('ok');
-        result.innerHTML = '<h3>Thank you — your enquiry has been received.</h3><p>Our team will review your requirements and contact you using the details you provided.</p>';
-        form.reset(); steps.forEach(s => s.classList.remove('on')); $('.form-nav', form).hidden = true;
-        ind.forEach(li => { li.classList.remove('on'); li.classList.add('done'); });
-      } catch (err) {
-        result.classList.add('bad');
-        result.innerHTML = `<h3>We couldn't send your enquiry</h3><p>Please check your connection and try again, or contact us directly at <a href="mailto:${esc(CFG.email)}">${esc(CFG.email)}</a> or <a href="tel:${esc(CFG.phone)}">${esc(CFG.phoneDisplay)}</a>.</p>`;
-      } finally {
-        submit.disabled = false; submit.querySelector('span').textContent = 'Submit enquiry';
-        result.focus();
+        const r = await sendEnquiry(p);
+        if (r.offline) result.innerHTML = offlineHtml(p);
+        else { result.classList.add('ok'); result.innerHTML = thanksHtml(p.name); form.hidden = true; }
+      } catch (err) { result.classList.add('bad'); result.innerHTML = failHtml(p); }
+      finally { btn.disabled = false; lbl.textContent = 'Send enquiry'; result.focus(); }
+    });
+  }
+
+  /* Enquiry pop-up: opens once a few seconds after a visitor arrives, and from any [data-enquire] button */
+  const POP_KEY = 'subha-eq';
+  const popState = () => { try { return JSON.parse(localStorage.getItem(POP_KEY)) || {}; } catch (e) { return {}; } };
+  const cmsMode = /[?&]cms_/.test(location.search) || (() => { try { return !!(sessionStorage.getItem('cms_labels') || sessionStorage.getItem('cms_preview')); } catch (e) { return false; } })();
+  let pop = null, lastFocus = null, popT0 = 0;
+  const buildPop = () => {
+    const el = document.createElement('div');
+    el.className = 'eq'; el.hidden = true;
+    el.innerHTML = `<div class="eq-bg" data-eq-close></div>
+      <div class="eq-card" role="dialog" aria-modal="true" aria-labelledby="eq-title">
+        <button class="eq-x" type="button" data-eq-close aria-label="Close"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 2l12 12M14 2L2 14"/></svg></button>
+        <div class="eq-side"><img src="${esc(asset('assets/images/home/hero-02-evening-pool-pavilion-villa.jpg'))}" alt="" loading="lazy"><div class="eq-side-in"><span class="eyebrow">SUBHA INFRA</span><h3>Designed to inspire. Built to last.</h3><ul><li>Architecture, interiors &amp; structural design</li><li>Design &amp; build, PEB, steel &amp; facades</li><li>Free first consultation</li></ul></div></div>
+        <div class="eq-main">
+          <span class="eyebrow">Free consultation</span>
+          <h2 id="eq-title" class="mt-s">Planning a project?</h2>
+          <p>Share a few details and our team will call you back.</p>
+          <form novalidate>
+            <div class="hp" aria-hidden="true"><label>Leave empty<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
+            <label>Your name <i>*</i><input name="name" autocomplete="name" maxlength="80" required></label>
+            <div class="row2"><label>Mobile number <i>*</i><input name="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="+91" required></label>
+              <label>Email<input name="email" type="email" autocomplete="email" maxlength="120"></label></div>
+            <label>Project type<select name="service"><option value="">Choose (optional)</option>${SERVICES.map(s => `<option>${esc(s)}</option>`).join('')}</select></label>
+            <label>Project requirements<textarea name="message" maxlength="1500" placeholder="e.g. G+2 house on a 30×40 plot in Bengaluru"></textarea></label>
+            <div class="eq-err" role="alert"></div>
+            <div class="eq-foot"><button class="btn btn-bronze" type="submit"><span>Request a call back</span></button><button class="eq-later" type="button" data-eq-close>Maybe later</button></div>
+            <p class="small-note">We respect your privacy — no spam, ever.</p>
+          </form>
+        </div>
+      </div>`;
+    document.body.appendChild(el);
+    const f = $('form', el), err = $('.eq-err', el);
+    el.addEventListener('click', e => { if (e.target.closest('[data-eq-close]')) closePop(); });
+    el.addEventListener('keydown', e => {
+      if (e.key === 'Escape') { e.stopPropagation(); closePop(); }
+      if (e.key === 'Tab') {   // keep focus inside the dialog
+        const fs = $$('button, input, select, textarea, a[href]', $('.eq-card', el)).filter(x => !x.closest('.hp') && x.offsetParent !== null);
+        if (!fs.length) return;
+        if (e.shiftKey && document.activeElement === fs[0]) { e.preventDefault(); fs[fs.length - 1].focus(); }
+        else if (!e.shiftKey && document.activeElement === fs[fs.length - 1]) { e.preventDefault(); fs[0].focus(); }
       }
     });
-    showStep(0);
+    f.addEventListener('input', e => { const l = e.target.closest('label'); if (l) l.classList.remove('bad'); err.textContent = ''; });
+    f.addEventListener('submit', async e => {
+      e.preventDefault();
+      const p = {}; ['name', 'phone', 'email', 'service', 'message', 'website'].forEach(k => { p[k] = String(f[k].value || '').trim(); });
+      const bad = [];
+      if (!p.name) bad.push(['name', 'Please enter your name.']);
+      if (!validPhone(p.phone)) bad.push(['phone', 'Enter a valid 10-digit mobile number.']);
+      if (!validEmail(p.email)) bad.push(['email', 'Enter a valid email address.']);
+      $$('label', f).forEach(l => l.classList.remove('bad'));
+      if (bad.length) { bad.forEach(([k]) => f[k].closest('label').classList.add('bad')); err.textContent = bad[0][1]; f[bad[0][0]].focus(); return; }
+      if (p.website) { closePop(); return; }
+      p.source = 'Pop-up' + (pop.dataset.from ? ' · ' + pop.dataset.from : ''); p.t = Date.now() - popT0;
+      const b = $('button[type="submit"]', f), lbl = $('span', b);
+      b.disabled = true; lbl.textContent = 'Sending…';
+      try {
+        const r = await sendEnquiry(p);
+        const main = $('.eq-main', el);
+        main.innerHTML = `<div class="eq-done">${r.offline ? offlineHtml(p) : thanksHtml(p.name)}<p style="margin-top:18px"><button class="eq-later" type="button" data-eq-close>Close</button></p></div>`;
+      } catch (x) { $('.eq-main', el).innerHTML = `<div class="eq-done">${failHtml(p)}<p style="margin-top:18px"><button class="eq-later" type="button" data-eq-close>Close</button></p></div>`; }
+      finally { b.disabled = false; lbl.textContent = 'Request a call back'; }
+    });
+    return el;
+  };
+  function openPop(from, service) {
+    if (!pop) pop = buildPop();
+    pop.dataset.from = from || '';
+    const sel = $('select[name="service"]', pop);
+    if (sel && service) { const o = [...sel.options].find(x => x.value.toLowerCase().indexOf(String(service).toLowerCase().split(' ')[0]) === 0); if (o) sel.value = o.value; }
+    lastFocus = document.activeElement; popT0 = Date.now();
+    pop.hidden = false; body.classList.add('eq-open');
+    requestAnimationFrame(() => requestAnimationFrame(() => pop.classList.add('on')));
+    setTimeout(() => { const i = $('input[name="name"]', pop); if (i) i.focus({ preventScroll: true }); }, 350);
   }
-})();
+  function closePop() {
+    if (!pop || pop.hidden) return;
+    pop.classList.remove('on'); body.classList.remove('eq-open');
+    const st = popState(); if (!st.done) { try { localStorage.setItem(POP_KEY, JSON.stringify({ t: Date.now() })); } catch (e) { } }
+    setTimeout(() => { pop.hidden = true; }, reduce ? 0 : 450);
+    if (lastFocus && lastFocus.focus) lastFocus.focus({ preventScroll: true });
+  }
+  document.addEventListener('click', e => {
+    const a = e.target.closest('[data-enquire]');
+    if (!a || e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0 || form) return;
+    e.preventDefault(); openPop(a.dataset.enquire || 'Button', a.dataset.enquire);
+  });
+  // Automatic opening: once per visitor (again after 3 days if closed; never after an enquiry was sent)
+  const st0 = popState(), DAY = 864e5;
+  const auto = !form && !cmsMode && !/\/404/.test(location.pathname) && CFG.enquiryPopup !== false && !st0.done && !(st0.t && Date.now() - st0.t < 3 * DAY);
+  if (auto) setTimeout(() => { if (!document.hidden && !body.classList.contains('nav-open') && !$('dialog[open]')) openPop('Auto'); }, Math.max(1500, Number(CFG.enquiryPopupDelay) || 5000));})();

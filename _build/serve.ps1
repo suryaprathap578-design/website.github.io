@@ -19,6 +19,11 @@ try {
     try {
     $path = [Uri]::UnescapeDataString($req.Url.AbsolutePath)
     $status = 200; $file = $null; $redirect = $null
+    # A build made for a sub-folder (build.ps1 -Base /folder) prefixes every link with /folder.
+    # Strip that prefix so the same files also preview correctly at http://localhost:<port>/
+    $base = ''
+    try { if ([IO.File]::ReadAllText("$root\index.html") -match "SITE_BASE='(/[^']+)'") { $base = $Matches[1] } } catch { }
+    if ($base -and ($path -eq $base -or $path.StartsWith($base + '/'))) { $path = $path.Substring($base.Length); if (-not $path) { $path = '/' } }
     if ($path -match '^/_build(/|$)') { $status = 404 }
     elseif ($legacy.ContainsKey($path)) { $redirect = $legacy[$path] }
     elseif ($path -match '^(.*/)index\.html$') { $redirect = $Matches[1] }

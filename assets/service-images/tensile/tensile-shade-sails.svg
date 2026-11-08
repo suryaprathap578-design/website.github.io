@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" width="1600" height="1000" role="img" aria-labelledby="t d">
+  <title id="t">Tensile fabric shade sails over a landscaped courtyard</title>
+  <desc id="d">Illustration of hyperbolic paraboloid tensile membrane sails on steel masts with cable stays — tensile fabric structure design by SUBHA INFRA.</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7FA9C9"/><stop offset=".55" stop-color="#C9DCE8"/><stop offset="1" stop-color="#F3EDE2"/></linearGradient>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D9D0BF"/><stop offset="1" stop-color="#BBAE98"/></linearGradient>
+    <linearGradient id="m1" x1="0" y1="0" x2="1" y2=".35"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".45" stop-color="#EEF1F3"/><stop offset=".62" stop-color="#D3D9DE"/><stop offset="1" stop-color="#FBFBFB"/></linearGradient>
+    <linearGradient id="m2" x1="1" y1="0" x2="0" y2=".4"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".4" stop-color="#E9EDF0"/><stop offset=".64" stop-color="#CBD2D8"/><stop offset="1" stop-color="#F7F8F9"/></linearGradient>
+    <linearGradient id="m3" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#E8D6B6"/><stop offset=".5" stop-color="#D9C29B"/><stop offset="1" stop-color="#EBDDC2"/></linearGradient>
+    <linearGradient id="bld" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ECE7DE"/><stop offset="1" stop-color="#DCD5C9"/></linearGradient>
+    <radialGradient id="sun" cx=".82" cy=".18" r=".5"><stop offset="0" stop-color="#FFF6DD" stop-opacity=".9"/><stop offset="1" stop-color="#FFF6DD" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="1600" height="1000" fill="url(#sky)"/>
+  <rect width="1600" height="1000" fill="url(#sun)"/>
+  <!-- distant trees -->
+  <g fill="#8EA58A" opacity=".55"><circle cx="70" cy="560" r="70"/><circle cx="150" cy="545" r="62"/><circle cx="1460" cy="548" r="74"/><circle cx="1545" cy="566" r="66"/></g>
+  <!-- building backdrop -->
+  <rect x="120" y="440" width="1360" height="200" fill="url(#bld)"/>
+  <rect x="120" y="430" width="1360" height="14" fill="#C8BFB0"/>
+  <g fill="#9FB0BE" opacity=".85">
+    <rect x="160" y="480" width="210" height="110"/><rect x="400" y="480" width="210" height="110"/><rect x="640" y="480" width="320" height="140"/><rect x="990" y="480" width="210" height="110"/><rect x="1230" y="480" width="210" height="110"/>
+  </g>
+  <g stroke="#E8E2D7" stroke-width="4"><path d="M265 480v110M505 480v110M800 480v140M1095 480v110M1335 480v110"/></g>
+  <!-- ground -->
+  <rect y="640" width="1600" height="360" fill="url(#ground)"/>
+  <g stroke="#C6BAA5" stroke-width="2" opacity=".8"><path d="M800 640L-200 1000M800 640L300 1000M800 640L800 1000M800 640L1300 1000M800 640L1800 1000M0 700H1600M0 790H1600M0 900H1600"/></g>
+  <!-- sail shadows -->
+  <g fill="#5E5040" opacity=".13"><path d="M130 760 Q420 742 520 860 Q610 770 790 730 Q560 720 470 700 Q330 735 130 760Z"/><path d="M770 735 Q990 742 1080 880 Q1210 770 1450 745 Q1240 718 1110 708 Q930 728 770 735Z"/></g>
+  <!-- planters + greenery -->
+  <g><rect x="250" y="690" width="160" height="44" fill="#A99A82"/><g fill="#6F8B66"><circle cx="280" cy="684" r="26"/><circle cx="330" cy="676" r="32"/><circle cx="382" cy="686" r="24"/></g>
+     <rect x="1180" y="700" width="180" height="46" fill="#A99A82"/><g fill="#6F8B66"><circle cx="1212" cy="693" r="28"/><circle cx="1268" cy="684" r="34"/><circle cx="1326" cy="694" r="26"/></g></g>
+  <!-- back sail (sand) -->
+  <path d="M560 330 Q700 285 790 200 Q880 270 1010 300 Q890 330 790 360 Q690 335 560 330Z" fill="url(#m3)" stroke="#8C7A5E" stroke-width="2"/>
+  <path d="M790 200V655" stroke="#2E3742" stroke-width="9"/>
+  <!-- masts & stays (behind sails) -->
+  <g stroke="#2E3742" stroke-linecap="round">
+    <path d="M160 300V715" stroke-width="12"/><path d="M760 330V705" stroke-width="12"/><path d="M1430 290V712" stroke-width="12"/>
+    <path d="M470 520V742" stroke-width="8"/><path d="M1070 520V752" stroke-width="8"/>
+  </g>
+  <g stroke="#56606B" stroke-width="2.4"><path d="M160 300L52 724M1430 290L1548 724M790 200L640 655M790 200L940 655"/></g>
+  <!-- sail 1 -->
+  <path d="M160 300 Q360 420 470 520 Q600 405 760 330 Q600 360 450 380 Q300 330 160 300Z" fill="url(#m1)" stroke="#5C6670" stroke-width="3"/>
+  <g stroke="#C9D0D6" stroke-width="1.2" opacity=".9" fill="none"><path d="M200 318 Q430 390 720 342M250 345 Q440 410 680 360M300 372 Q450 430 620 382M350 405 Q460 455 560 410"/></g>
+  <!-- sail 2 -->
+  <path d="M760 330 Q960 400 1070 520 Q1220 400 1430 290 Q1250 330 1090 370 Q930 345 760 330Z" fill="url(#m2)" stroke="#5C6670" stroke-width="3"/>
+  <g stroke="#C9D0D6" stroke-width="1.2" opacity=".9" fill="none"><path d="M800 345 Q1090 380 1390 305M850 370 Q1080 400 1330 330M910 400 Q1080 430 1260 362M970 435 Q1075 465 1180 400"/></g>
+  <!-- corner plates -->
+  <g fill="#1E2630"><circle cx="160" cy="300" r="8"/><circle cx="760" cy="330" r="8"/><circle cx="1430" cy="290" r="8"/><circle cx="470" cy="520" r="7"/><circle cx="1070" cy="520" r="7"/><circle cx="790" cy="200" r="7"/></g>
+  <!-- people for scale -->
+  <g fill="#3B4450" opacity=".85"><circle cx="612" cy="742" r="9"/><rect x="603" y="752" width="18" height="44" rx="7"/><circle cx="642" cy="748" r="8"/><rect x="634" y="757" width="16" height="40" rx="6"/><circle cx="938" cy="770" r="9"/><rect x="929" y="780" width="18" height="46" rx="7"/></g>
+  <!-- bench -->
+  <rect x="860" y="790" width="150" height="16" fill="#7E6A4E"/><rect x="872" y="806" width="10" height="22" fill="#5D4E3A"/><rect x="988" y="806" width="10" height="22" fill="#5D4E3A"/>
+</svg>

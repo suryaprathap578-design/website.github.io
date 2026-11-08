@@ -134,6 +134,7 @@ All cells are stored as plain text. Never rename columns.
 | `website_settings` | key, value | site_url, image_url_template, upload_max_px, webp_quality, published_version, published_at, published_by |
 | `counters` | prefix, last_seq | Next number = max(last_seq, highest used) + 1. |
 | `audit_log` | time, user, action, details | Every upload, change, publish and login. |
+| `enquiries` | id, time, name, phone, email, service, location, message, source, page, status, notes, updated_at, updated_by | Website contact form + pop-up. `id` = ENQ-0001…; `status` = New · Contacted · Site visit · Quoted · Won · Closed. Created automatically on the first enquiry. |
 
 The published version is also saved as `published.json` in the Drive folder and cached in Apps Script (CacheService, chunked, 6 h).
 
@@ -162,6 +163,12 @@ Editing the Sheet by hand is possible but skips the checks. Afterwards, run `rep
 - `GET ?api=site&mode=draft&token=<admin session>` returns the same shape with unpublished drafts (used by Preview).
 - `GET ?api=health` returns `{ ok, version, ready }`.
 
+**Public** — `POST <web app URL>?api=enquiry` (body: JSON sent as text/plain, so browsers need no CORS pre-flight)
+```jsonc
+{ "name": "Ravi", "phone": "+91 98450 12345", "email": "", "service": "Interior design", "location": "Bengaluru", "message": "…", "source": "Pop-up", "page": "/", "t": 9000, "website": "" }
+```
+→ `{ ok: true, id: "ENQ-0007" }` or `{ ok: false, error }`. Saved to the `enquiries` sheet and emailed to *Settings → Send enquiry emails to* (empty = the owner account). Spam protection: hidden `website` field, minimum fill time (`t` ≥ 1.5 s), 20 per minute overall, 3 per hour per phone number.
+
 **Admin** — `google.script.run.rpc(token, action, args)` → `{ ok, data | error }`, after `login(email, password)` → `{ ok, token, user }`. Sessions last 6 hours.
 
 | Action | args |
@@ -176,6 +183,7 @@ Editing the Sheet by hand is possible but skips the checks. Afterwards, run `rep
 | saveProject / deleteProject / setProjectImages | project {…} / project_no / project_no, items [{image_id, role}] |
 | saveCategory / saveSubcategory / deleteSubcategory | code, name, group, isNew / category_code, name, id / id |
 | publish, downloadZip (ids, max 40), saveSettings, listAdmins, saveAdmin, changePassword, auditLog | |
+| listEnquiries / updateEnquiry | — / id, status, notes |
 
 Write actions run under a script lock, one at a time.
 
@@ -190,10 +198,22 @@ Write actions run under a script lock, one at a time.
    powershell -ExecutionPolicy Bypass -File _build\cms\generate-cms.ps1
    powershell -ExecutionPolicy Bypass -File _build\build.ps1
    ```
-4. Paste the new `apps-script/Seed.gs` into the Apps Script project and run **`syncPlacements`**. This adds the new keys and keeps all existing choices.
+4. Paste the new `apps-script/Seed.gs` (and any changed `Code.gs` / `App.html` / `Styles.html`) into the Apps Script project and run **`syncWebsite`**. It adds new images, placements and categories, points every placement *nobody changed in the admin panel* to its new image, keeps every choice you made, retires unused old placeholder files and publishes. The execution log lists exactly what changed.
 5. Upload the site.
 
 Logos and the favicon are deliberately *not* managed (brand assets).
+
+---
+
+## 7b. Making admin-panel photos permanent in the website files
+
+New photos chosen in the admin panel live in Google Drive and are swapped in by `js/cms.js`. To copy the published choices into the website itself (faster first paint, works without the CMS, better for Google Images):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File _build\cms\sync-images.ps1 -WhatIf   # preview
+powershell -ExecutionPolicy Bypass -File _build\cms\sync-images.ps1          # do it
+```
+It downloads each changed photo to `assets/cms/<IMAGE-ID>.webp`, points the matching `<img data-slot>` (and team photos in `js/site-config.js`) at it, moves old files nobody uses any more to `_build/cms/replaced/<date>/`, and rebuilds with the current base path. Then push / upload the site as usual.
 
 ---
 
@@ -206,6 +226,7 @@ Logos and the favicon are deliberately *not* managed (brand assets).
 | Apps Script run time | 6 min per request | One upload is about 2–4 s; publish is under 10 s |
 | Apps Script concurrency | 30 simultaneous requests | Each visitor calls the API at most once per 10 min (browser cache), and the answer comes from cache, so this is ample for a corporate site |
 | UrlFetch | 20,000 / day | Only used by "Download" for original website files |
+| Email (MailApp) | 100 recipients / day | One email per website enquiry |
 | CacheService | 100 KB per key, 6 h | The published list is split into chunks automatically |
 | Image CDN (`lh3.googleusercontent.com`) | Not a documented Google product | Widely used, but Google could change it. Switch the template in Settings if it ever stops working. |
 

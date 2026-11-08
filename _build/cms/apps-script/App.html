@@ -29,7 +29,10 @@ const I = {
   plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>',
   left: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5l-7 7 7 7"/></svg>',
   right: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7"/></svg>',
-  out: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4M10 16l-4-4 4-4M6 12h10"/></svg>'
+  out: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4M10 16l-4-4 4-4M6 12h10"/></svg>',
+  team: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c.6-3.6 3-5.6 6-5.6s5.4 2 6 5.6M15 14.6c2.8-.3 5 1.4 5.6 4.4"/></svg>',
+  mail: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>',
+  phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 5a2 2 0 0 1 2-2z"/></svg>'
 };
 
 /* ---------------- state ---------------- */
@@ -198,12 +201,14 @@ async function refresh() {
 
 const NAV = [
   ['Overview'], ['dashboard', 'Dashboard', 'dash'],
-  ['Website content'], ['landing', 'Landing Page', 'home'], ['services', 'Services Pages', 'svc'], ['placements', 'All Placements', 'place'], ['projects', 'Projects', 'prj'],
+  ['Website content'], ['landing', 'Landing Page', 'home'], ['services', 'Services Pages', 'svc'], ['team', 'Team Photos', 'team'], ['placements', 'All Placements', 'place'], ['projects', 'Projects', 'prj'],
+  ['Customers'], ['enquiries', 'Enquiries', 'mail'],
   ['Image library'], ['library', 'Image Library', 'img'], ['categories', 'Categories', 'cat'],
   ['Publishing'], ['publish', 'Publish & Preview', 'pub'], ['settings', 'Settings', 'set']
 ];
 const TITLES = {
-  dashboard: ['Dashboard', 'Overview of the image library and the live website'],
+  dashboard: ['Dashboard', 'Choose what to change on the website, or upload new images'],
+  enquiries: ['Enquiries', 'Messages from the website contact form and pop-up'],
   library: ['Image Library', 'Every image, its permanent ID and where it is used'],
   placements: ['Website Placements', 'Choose exactly which image appears in each spot on the website'],
   projects: ['Projects', 'Project numbers, featured images and project galleries'],
@@ -220,17 +225,18 @@ function renderShell() {
     <input type="file" id="file-upload" accept="image/jpeg,image/png,image/webp" multiple hidden>`;
   renderNav();
 }
-function navKey() { return S.view === 'placements' ? (S.page === '__home' ? 'landing' : S.page === '__services' ? 'services' : 'placements') : S.view; }
+function navKey() { return S.view === 'placements' ? (S.page === '__home' ? 'landing' : S.page === '__services' ? 'services' : S.page === 'Team' ? 'team' : 'placements') : S.view; }
 function renderNav() {
   const cur = navKey(), n = S.d.pending.count;
   $('#nav').innerHTML = NAV.map(x => x.length === 1 ? `<div class="grp">${x[0]}</div>`
-    : `<button class="${cur === x[0] ? 'on' : ''}" data-act="nav" data-v="${x[0]}">${I[x[2]]}${x[1]}${x[0] === 'publish' && n ? `<span class="ct">${n}</span>` : ''}</button>`).join('');
+    : `<button class="${cur === x[0] ? 'on' : ''}" data-act="nav" data-v="${x[0]}">${I[x[2]]}${x[1]}${x[0] === 'publish' && n ? `<span class="ct">${n}</span>` : ''}${x[0] === 'enquiries' && S.d.enquiries && S.d.enquiries.fresh ? `<span class="ct">${S.d.enquiries.fresh}</span>` : ''}</button>`).join('');
 }
 function renderTop() {
   const t = TITLES[S.view] || ['', ''];
   let title = t[0];
   if (S.view === 'placements' && S.page === '__home') title = 'Landing Page';
   if (S.view === 'placements' && S.page === '__services') title = 'Services Pages';
+  if (S.view === 'placements' && S.page === 'Team') title = 'Team Photos';
   const n = S.d.pending.count;
   $('#top').innerHTML = `<h1>${esc(title)}<span class="sub">${esc(t[1])}</span></h1>
     ${n ? `<button class="chip gold" data-act="nav" data-v="publish" style="cursor:pointer">${n} unpublished change${n > 1 ? 's' : ''}</button>` : '<span class="chip ok">Website is up to date</span>'}
@@ -240,7 +246,8 @@ function renderTop() {
 function go(view, opts) {
   if (view === 'landing') { view = 'placements'; S.page = '__home'; }
   else if (view === 'services') { view = 'placements'; S.page = '__services'; }
-  else if (view === 'placements' && !(opts && opts.page) && (S.page === '__home' || S.page === '__services')) S.page = null;
+  else if (view === 'team') { view = 'placements'; S.page = 'Team'; }
+  else if (view === 'placements' && !(opts && opts.page) && (S.page === '__home' || S.page === '__services' || S.page === 'Team')) S.page = null;
   S.view = view; Object.assign(S, opts || {});
   renderNav(); renderTop(); renderView();
   window.scrollTo(0, 0);
@@ -257,6 +264,18 @@ function renderView() {
 const VIEWS = {}, AFTER = {};
 
 /* ---------------- Dashboard ---------------- */
+const GUIDE = [
+  { t: 'Home page · hero slider', d: 'The 8 large photos that rotate at the top of the home page', page: 'Home (landing page)', sec: 'Hero slider' },
+  { t: 'Home page · capabilities', d: 'The six service cards (architecture, structure, design & build…)', page: 'Home (landing page)', sec: 'Core capabilities' },
+  { t: 'Home page · industries we serve', d: 'Residential, commercial, industrial, warehouses, special structures', page: 'Home (landing page)', sec: 'Industries we serve' },
+  { t: 'Project journey (8 steps)', d: 'Consultation → floor plans → 3D → drawings → handover', page: 'Project journey (Home + Packages)' },
+  { t: 'Team photos', d: 'CEO portrait, team members and the group photo', page: 'Team', icon: 'team' },
+  { t: 'Interior Design page', d: 'Header image and interior design gallery', page: 'Service · Interior Design' },
+  { t: 'Tensile Fabric page', d: 'Shade sails, conical canopies, car-park canopies', page: 'Service · Tensile Fabric Structures' },
+  { t: 'All service pages', d: 'Architecture, structural, design & build, steel, PEB, facades', page: '__services', icon: 'svc' },
+  { t: 'Packages page', d: 'Header image and add-on service images', page: 'Packages & Estimate' },
+  { t: 'Header menus', d: 'Small images in the Services and Projects drop-down menus', page: 'Header menus (every page)', icon: 'place' }
+];
 VIEWS.dashboard = () => {
   const imgs = S.d.images, act = imgs.filter(i => i.status === 'active').length;
   const filled = S.d.slots.filter(s => s.image_id).length;
@@ -267,7 +286,21 @@ VIEWS.dashboard = () => {
   const byCat = S.d.categories.map(c => [c, imgs.filter(i => i.category_code === c.code).length]);
   const max = Math.max(1, ...byCat.map(x => x[1]));
   const recent = imgs.slice().sort((a, b) => String(b.upload_date).localeCompare(String(a.upload_date)) || b.seq - a.seq).slice(0, 8);
+  const guide = GUIDE.map(g => {
+    const slots = S.d.slots.filter(s => (g.page === '__services' ? /^Service/.test(s.page) : s.page === g.page) && (!g.sec || s.section === g.sec));
+    const first = slots.find(s => s.image_id && S.img[s.image_id]);
+    const filled = slots.filter(s => s.image_id).length;
+    return `<button class="gd" data-act="guide" data-page="${esc(g.page)}" data-sec="${esc(g.sec || '')}">
+      <span class="gd-img">${first ? `<img loading="lazy" src="${esc(src(S.img[first.image_id], 480))}" alt="">` : I[g.icon || 'img']}</span>
+      <span class="gd-b"><b>${esc(g.t)}</b><small>${esc(g.d)}</small><em>${slots.length} spot${slots.length === 1 ? '' : 's'} · ${filled} with images</em></span></button>`;
+  }).join('');
   return `<div class="grid">
+    <div class="panel"><div class="panel-h"><h2>What would you like to change?</h2><span class="small muted">Pick an area — you will see every image in it with its spot on the website.</span></div>
+      <div class="panel-b"><div class="guide">${guide}
+        <button class="gd" data-act="nav" data-v="projects"><span class="gd-img">${I.prj}</span><span class="gd-b"><b>Project photos</b><small>Featured image and gallery of each of the ${S.d.projects.length} projects</small><em>Projects</em></span></button>
+        <button class="gd" data-act="upload"><span class="gd-img">${I.up}</span><span class="gd-b"><b>Upload new photos</b><small>Add photos to the library, then place them anywhere</small><em>JPG · PNG · WebP</em></span></button>
+      </div>
+      <div class="steps3"><div><b>1</b><span>Click an area above, then <b>Change</b> on the image you want to replace.</span></div><div><b>2</b><span>Pick a photo from the library or <b>Upload new</b>. It is saved as a draft.</span></div><div><b>3</b><span>Press <b>Publish</b> (top right). The live website updates in a few seconds.</span></div></div></div></div>
     <div class="kpis">
       <div class="kpi"><span>Images</span><b>${imgs.length}</b><small>${act} active · ${imgs.length - act} inactive/archived</small></div>
       <div class="kpi"><span>Placements filled</span><b>${filled}<small style="display:inline;font-size:16px"> / ${S.d.slots.length}</small></b><small>${S.pages.length} pages &amp; menus</small></div>
@@ -275,8 +308,8 @@ VIEWS.dashboard = () => {
       <div class="kpi accent"><span>Unpublished changes</span><b>${S.d.pending.count}</b><small>Live version v${esc(S.d.settings.published_version)} · ${fmtTime(S.d.settings.published_at)}</small></div>
     </div>
     ${ph.length || empty.length || inactiveUsed.length ? `<div class="panel"><div class="panel-h"><h2>Needs attention</h2></div><div class="panel-b grid">
-      ${ph.length ? `<div class="alert">${I.warn}<div><b>${ph.length} placeholder photos.</b> The interior gallery and design-journey images are copies of exterior project photos (for example INT-001 is the same file as an ARCH villa photo). Replace them with real photos — their IDs and placements stay the same.<div style="margin-top:8px"><button class="btn btn-sm" data-act="lib-filter" data-k="status" data-val="placeholder">Show placeholder photos</button></div></div></div>` : ''}
-      ${empty.length ? `<div class="alert info">${I.info}<div><b>${empty.length} empty placements</b> show a built-in placeholder: ${empty.map(s => `<span class="chip link" data-act="goto-slot" data-key="${esc(s.slot_key)}">${esc(s.slot_key)}</span>`).join(' ')}</div></div>` : ''}
+      ${ph.length ? `<div class="alert">${I.warn}<div><b>${ph.length} placeholder photos.</b> These files are copies of another photo. Replace them with real photos — their IDs and placements stay the same.<div style="margin-top:8px"><button class="btn btn-sm" data-act="lib-filter" data-k="status" data-val="placeholder">Show placeholder photos</button></div></div></div>` : ''}
+      ${empty.length ? `<div class="alert info">${I.info}<div><b>${empty.length} empty placements</b> show a built-in placeholder (team photos appear here until you add them): ${empty.map(s => `<span class="chip link" data-act="goto-slot" data-key="${esc(s.slot_key)}">${esc(s.slot_key)}</span>`).join(' ')}</div></div>` : ''}
       ${inactiveUsed.length ? `<div class="alert">${I.warn}<div><b>${inactiveUsed.length} placements use an inactive image</b> and will show the built-in image instead: ${inactiveUsed.map(s => `<span class="chip link" data-act="goto-slot" data-key="${esc(s.slot_key)}">${esc(s.slot_key)}</span>`).join(' ')}</div></div>` : ''}
     </div></div>` : ''}
     <div class="grid cols-2">
@@ -561,6 +594,34 @@ VIEWS.publish = () => {
   </div>`;
 };
 
+/* ---------------- Enquiries ---------------- */
+VIEWS.enquiries = () => `<div class="grid">
+    <div class="toolbar"><div class="alert info" style="flex:1">${I.info}<div>Every enquiry from the website <b>contact form</b> and <b>pop-up</b> is saved here (and in the Google Sheet tab <b>enquiries</b>) and emailed to ${esc(S.d.settings.notify_email || 'the owner account')}. Change the email address in <b>Settings</b>.</div></div>
+      <button class="btn" data-act="enq-load">${I.repl} Refresh</button></div>
+    <div id="enq-box"><div class="empty-state"><span class="spin"></span><br><br>Loading enquiries…</div></div></div>`;
+AFTER.enquiries = () => loadEnquiries();
+function loadEnquiries() { call('listEnquiries').then(l => { S.enq = l; drawEnquiries(); }).catch(fail); }
+function drawEnquiries() {
+  const box = $('#enq-box'); if (!box || !S.enq) return;
+  const st = S.d.enquiries.statuses || ['New'], f = S.enqF || '';
+  const list = S.enq.filter(q => !f || q.status === f);
+  const count = s => S.enq.filter(q => q.status === s).length;
+  const wa = p => 'https://wa.me/' + String(p).replace(/\D/g, '').replace(/^(\d{10})$/, '91$1');
+  box.innerHTML = `<div class="toolbar"><button class="chip ${!f ? 'gold' : ''}" data-act="enq-filter" data-val="" style="cursor:pointer">All ${S.enq.length}</button>${st.map(s => `<button class="chip ${f === s ? 'gold' : ''}" data-act="enq-filter" data-val="${esc(s)}" style="cursor:pointer">${esc(s)} ${count(s)}</button>`).join('')}</div>
+    ${list.length ? `<div class="enq-list">${list.map(q => `<div class="panel enq ${q.status === 'New' ? 'new' : ''}">
+      <div class="enq-h"><span class="id">${esc(q.id)}</span><b>${esc(q.name)}</b><span class="small muted">${fmtTime(q.time)} · ${esc(q.source || 'Website')}${q.page ? ' · ' + esc(q.page) : ''}</span>
+        <select class="in" data-chg="enq-status" data-id="${esc(q.id)}" style="margin-left:auto;width:auto">${st.map(s => opt(s, s, q.status)).join('')}</select></div>
+      <div class="enq-b"><div class="enq-c">
+          <a class="btn btn-sm" href="tel:${esc(q.phone)}">${I.phone} ${esc(q.phone)}</a>
+          <a class="btn btn-sm" href="${esc(wa(q.phone))}" target="_blank">WhatsApp</a>
+          ${q.email ? `<a class="btn btn-sm" href="mailto:${esc(q.email)}?subject=${encodeURIComponent('Your enquiry with SUBHA INFRA (' + q.id + ')')}">${I.mail} ${esc(q.email)}</a>` : ''}
+        </div>
+        <div class="small">${q.service ? `<span class="chip">${esc(q.service)}</span> ` : ''}${q.location ? `<span class="chip">${esc(q.location)}</span>` : ''}</div>
+        ${q.message ? `<div class="enq-msg">${esc(q.message)}</div>` : ''}
+        <label class="f"><span>Internal notes</span><textarea class="in" rows="2" data-chg="enq-notes" data-id="${esc(q.id)}" placeholder="Called on…, site visit fixed for…">${esc(q.notes)}</textarea></label>
+      </div></div>`).join('')}</div>` : '<div class="panel empty-state"><b>No enquiries yet</b>They appear here as soon as a visitor sends the contact form or the pop-up.</div>'}`;
+}
+
 /* ---------------- Settings ---------------- */
 VIEWS.settings = () => {
   const st = S.d.settings, owner = S.user.role === 'owner';
@@ -576,6 +637,7 @@ VIEWS.settings = () => {
       <label class="f"><span>Website address</span><input class="in" name="site_url" value="${esc(st.site_url)}" ${owner ? '' : 'disabled'}><small class="muted">Used for previews and for thumbnails of the original website images.</small></label>
       <label class="f"><span>Image URL template</span><input class="in mono" name="image_url_template" value="${esc(st.image_url_template)}" ${owner ? '' : 'disabled'}><small class="muted">{id} = Drive file ID, {w} = width. Alternative: https://drive.google.com/thumbnail?id={id}&amp;sz=w{w}</small></label>
       <label class="f"><span>Largest side when uploading (px)</span><input class="in" name="upload_max_px" type="number" min="800" max="6000" step="100" value="${esc(st.upload_max_px)}" ${owner ? '' : 'disabled'}><small class="muted">2400 keeps full-screen hero images sharp on large displays.</small></label>
+      <label class="f"><span>Send enquiry emails to</span><input class="in" name="notify_email" value="${esc(st.notify_email || '')}" placeholder="Empty = the owner account(s)" ${owner ? '' : 'disabled'}><small class="muted">One or more addresses, separated by commas. New website enquiries are emailed here.</small></label>
       <label class="f"><span>WebP quality (0.5 – 1)</span><input class="in" name="webp_quality" type="number" min="0.5" max="1" step="0.01" value="${esc(st.webp_quality)}" ${owner ? '' : 'disabled'}><small class="muted">0.86 is visually lossless for photographs at about a third of the JPEG size.</small></label>
       ${owner ? '<div><button class="btn btn-primary">Save settings</button></div>' : '<div class="small muted">Only an owner can change these.</div>'}
     </form></div></div>
@@ -596,7 +658,7 @@ VIEWS.settings = () => {
   </div>`;
 };
 AFTER.settings = () => {
-  const sf = $('#set-form'); if (sf) sf.onsubmit = e => { e.preventDefault(); const f = e.target; call('saveSettings', { site_url: f.site_url.value, image_url_template: f.image_url_template.value, upload_max_px: f.upload_max_px.value, webp_quality: f.webp_quality.value }).then(() => { toast('Settings saved', 'ok'); refresh(); }).catch(fail); };
+  const sf = $('#set-form'); if (sf) sf.onsubmit = e => { e.preventDefault(); const f = e.target; call('saveSettings', { site_url: f.site_url.value, image_url_template: f.image_url_template.value, upload_max_px: f.upload_max_px.value, webp_quality: f.webp_quality.value, notify_email: f.notify_email.value }).then(() => { toast('Settings saved', 'ok'); refresh(); }).catch(fail); };
   const af = $('#admin-form'); if (af) af.onsubmit = e => { e.preventDefault(); const f = e.target; call('saveAdmin', { email: f.email.value, name: f.name.value, role: f.role.value, password: f.password.value }).then(() => { toast('Administrator saved', 'ok'); f.reset(); ACT['admins-load'](); }).catch(fail); };
   $('#pwd-form').onsubmit = e => { e.preventDefault(); const f = e.target; call('changePassword', { current: f.current.value, next: f.next.value }).then(() => { toast('Password changed', 'ok'); f.reset(); }).catch(fail); };
 };
@@ -781,7 +843,7 @@ async function deleteImages(ids) {
 function openPicker(o) {
   const P = { q: '', cat: o.cat || '', sel: new Set(o.selected || []), limit: 150 };
   const m = modal(`<div class="modal-h"><h2>${esc(o.title)}</h2><button class="icon-btn" data-close>${I.x}</button></div>
-    <div class="modal-b">${o.hint ? `<div class="small muted">${o.hint}</div>` : ''}
+    <div class="modal-b">${o.current && S.img[o.current] ? `<div class="pk-cur"><img src="${esc(src(S.img[o.current], 480))}" alt=""><div><span class="chip ok">Currently on the website</span><br><b><span class="id">${esc(o.current)}</span> ${esc(S.img[o.current].display_name)}</b><div class="small muted">Choose a new image below. The current one stays in the library.</div></div></div>` : ''}${o.hint ? `<div class="small muted">${o.hint}</div>` : ''}
       <div class="toolbar" style="margin:0"><div class="search">${I.search}<input class="in" id="pk-q" placeholder="Search ID, name or subcategory…"></div><select class="in" id="pk-cat">${catOptions(P.cat, 'All categories')}</select>
       <button class="btn" id="pk-up">${I.up} Upload new</button></div>
       <div class="picker-grid" id="pk-grid"></div></div>
@@ -970,6 +1032,16 @@ const ACT = {
   'clear-slot': async t => { if (await confirmBox('Clear ' + t.dataset.key + '?', '<p>The website will show the built-in image for this spot (after publishing). The image itself stays in the library.</p>', 'Clear placement')) assign(t.dataset.key, ''); },
   'goto-slot': t => { const s = S.d.slots.find(x => x.slot_key === t.dataset.key); if (!s) return; $$('.modal-bg').forEach(x => x.remove()); S.focusSlot = s.slot_key; go('placements', { page: s.page }); },
   'prj-new': () => openProject(null),
+  guide: t => {
+    const page = t.dataset.page, sec = t.dataset.sec;
+    if (page === '__services') { go('services'); return; }
+    if (page === 'Team') { go('team'); return; }
+    const first = sec ? S.d.slots.find(s => s.page === page && s.section === sec) : null;
+    if (first) S.focusSlot = first.slot_key;
+    go('placements', { page });
+  },
+  'enq-load': () => loadEnquiries(),
+  'enq-filter': t => { S.enqF = t.dataset.val; drawEnquiries(); },
   'prj-edit': t => openProject(t.dataset.no),
   'cat-edit': t => { const c = S.cat[t.dataset.code]; const n = prompt('Category name for ' + c.code, c.name); if (n && n !== c.name) call('saveCategory', { code: c.code, name: n, group: c.group, service_url: c.service_url }).then(() => { toast('Renamed', 'ok'); refresh(); }).catch(fail); },
   'sub-edit': t => { const n = prompt('Rename subcategory (images keep it)', t.dataset.name); if (n && n !== t.dataset.name) call('saveSubcategory', { id: t.dataset.id, category_code: t.dataset.code, name: n }).then(() => { toast('Renamed', 'ok'); refresh(); }).catch(fail); },
@@ -982,6 +1054,8 @@ const ACT = {
   'audit-load': () => call('auditLog').then(l => { $('#audit').innerHTML = `<div class="tbl-wrap" style="max-height:420px"><table class="tbl"><thead><tr><th>Time</th><th>User</th><th>Action</th><th>Details</th></tr></thead><tbody>${l.map(a => `<tr><td class="small" style="white-space:nowrap">${fmtTime(a.time)}</td><td class="small">${esc(String(a.user).split('@')[0])}</td><td><span class="chip">${esc(a.action)}</span></td><td class="small">${esc(a.details)}</td></tr>`).join('')}</tbody></table></div>`; }).catch(fail)
 };
 const CHG = {
+  'enq-status': t => call('updateEnquiry', { id: t.dataset.id, status: t.value }).then(r => { const q = (S.enq || []).find(x => x.id === r.id); if (q) Object.assign(q, r); toast(esc(r.id) + ' → ' + esc(r.status), 'ok'); S.d.enquiries.fresh = (S.enq || []).filter(x => x.status === 'New').length; renderNav(); drawEnquiries(); }).catch(fail),
+  'enq-notes': t => call('updateEnquiry', { id: t.dataset.id, notes: t.value }).then(r => { const q = (S.enq || []).find(x => x.id === r.id); if (q) Object.assign(q, r); toast('Notes saved for ' + esc(r.id), 'ok'); }).catch(fail),
   f: t => { S.f[t.dataset.k] = t.value; if (t.dataset.k === 'cat') S.f.sub = ''; S.limit = 120; renderView(); },
   sel: t => { t.checked ? S.sel.add(t.dataset.id) : S.sel.delete(t.dataset.id); renderView(); },
   'sel-all': t => { filteredImages().forEach(i => t.checked ? S.sel.add(i.image_id) : S.sel.delete(i.image_id)); renderView(); },

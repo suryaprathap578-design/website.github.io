@@ -4,7 +4,8 @@
    Database  : Google Sheet "SUBHA INFRA CMS Database" (one tab per table)
    Storage   : Google Drive folder "SUBHA INFRA CMS Images" (one sub-folder per category)
    Admin     : this web app (Admin.html)
-   Public API: <web app URL>?api=site   -> published image map read by /js/cms.js
+   Public API: <web app URL>?api=site        (GET)  published image map read by /js/cms.js
+               <web app URL>?api=enquiry     (POST) website enquiry form + pop-up -> sheet 'enquiries' + email
 
    First run (either way, only once):
      a) Deploy > New deployment > Web app, open the URL and fill in the
@@ -18,10 +19,12 @@
      useLocalSite        admin links/preview -> http://localhost:9090
      useLiveSite         admin links/preview -> https://www.subhainfra.com
      republish           push the current sheet data to the website
-     syncPlacements      after pasting a newer Seed.gs
+     syncWebsite         after pasting a newer Seed.gs: adds new images, placements and categories,
+                         updates spots you never changed, keeps every choice you made, then publishes
+     testEnquiryEmail    sends a test enquiry email to check notifications
    ===================================================================== */
 
-var VERSION = '1.0.0';
+var VERSION = '1.1.0';
 
 var TABLES = {
   images: ['uid', 'image_id', 'prefix', 'seq', 'original_filename', 'display_name', 'category_code', 'subcategory', 'project_no', 'source', 'file_id', 'url', 'alt_text', 'width', 'height', 'bytes', 'mime', 'upload_date', 'updated_at', 'display_order', 'status', 'notes'],
@@ -34,8 +37,10 @@ var TABLES = {
   administrators: ['email', 'name', 'role', 'salt', 'password_hash', 'active', 'last_login', 'created_at'],
   website_settings: ['key', 'value'],
   counters: ['prefix', 'last_seq'],
-  audit_log: ['time', 'user', 'action', 'details']
+  audit_log: ['time', 'user', 'action', 'details'],
+  enquiries: ['id', 'time', 'name', 'phone', 'email', 'service', 'location', 'message', 'source', 'page', 'status', 'notes', 'updated_at', 'updated_by']
 };
+var ENQUIRY_STATUSES = ['New', 'Contacted', 'Site visit', 'Quoted', 'Won', 'Closed'];
 
 var DEFAULT_SETTINGS = {
   site_url: 'https://www.subhainfra.com',
@@ -44,7 +49,8 @@ var DEFAULT_SETTINGS = {
   webp_quality: '0.86',
   published_version: '0',
   published_at: '',
-  published_by: ''
+  published_by: '',
+  notify_email: ''
 };
 
 var ALLOWED_MIME = { 'image/webp': '.webp', 'image/jpeg': '.jpg', 'image/png': '.png' };
@@ -63,6 +69,19 @@ function doGet(e) {
     .setTitle('SUBHA INFRA · Image CMS')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.DEFAULT);
+}
+
+/* Website enquiries (contact form + pop-up). The site posts JSON as text/plain (no CORS pre-flight). */
+function doPost(e) {
+  var p = (e && e.parameter) || {};
+  try {
+    if (p.api !== 'enquiry') return json_({ ok: false, error: 'Unknown request' });
+    var d = {};
+    try { d = JSON.parse((e.postData && e.postData.contents) || '{}'); } catch (x) { d = p; }
+    return json_(saveEnquiry_(d));
+  } catch (err) {
+    return json_({ ok: false, error: String(err.message || err) });
+  }
 }
 
 function include(name) { return HtmlService.createHtmlOutputFromFile(name).getContent(); }
@@ -131,7 +150,7 @@ function rpc(token, action, args) {
   }
 }
 
-var READ_ONLY = { bootstrap: 1, imageUsage: 1, downloadZip: 1, listAdmins: 1, auditLog: 1 };
+var READ_ONLY = { bootstrap: 1, imageUsage: 1, downloadZip: 1, listAdmins: 1, auditLog: 1, listEnquiries: 1 };
 
 var ACTIONS = {
   bootstrap: function (u) { return bootstrap_(u); },
@@ -155,7 +174,9 @@ var ACTIONS = {
   listAdmins: function (u) { requireOwner_(u); return rows_('administrators').map(function (x) { return { email: x.email, name: x.name, role: x.role, active: truthy_(x.active), last_login: x.last_login }; }); },
   saveAdmin: function (u, a) { return saveAdmin_(u, a); },
   changePassword: function (u, a) { return changePassword_(u, a.current, a.next); },
-  auditLog: function () { return rows_('audit_log').slice(-300).reverse(); }
+  auditLog: function () { return rows_('audit_log').slice(-300).reverse(); },
+  listEnquiries: function () { return rows_('enquiries').slice().reverse(); },
+  updateEnquiry: function (u, a) { return updateEnquiry_(u, a); }
 };
 
 /* =====================================================================
@@ -169,7 +190,8 @@ function bootstrap_(user) {
     user: user, version: VERSION, apiUrl: ScriptApp.getService().getUrl(),
     settings: settings, categories: rows_('image_categories'), subcategories: rows_('image_subcategories'),
     counters: rows_('counters'), images: images, slots: slotsWithAssignments_(), projects: rows_('projects'),
-    projectImages: rows_('project_images'), pending: diff_(live, pub)
+    projectImages: rows_('project_images'), pending: diff_(live, pub),
+    enquiries: { total: rows_('enquiries').length, fresh: rows_('enquiries').filter(function (q) { return q.status === 'New'; }).length, statuses: ENQUIRY_STATUSES }
   };
 }
 
@@ -474,7 +496,7 @@ function downloadZip_(ids) {
    ===================================================================== */
 function saveSettings_(user, a) {
   requireOwner_(user);
-  ['site_url', 'image_url_template', 'upload_max_px', 'webp_quality'].forEach(function (k) { if (a[k] !== undefined) setSetting_(k, String(a[k]).trim()); });
+  ['site_url', 'image_url_template', 'upload_max_px', 'webp_quality', 'notify_email'].forEach(function (k) { if (a[k] !== undefined) setSetting_(k, String(a[k]).trim()); });
   audit_(user, 'settings', JSON.stringify(a));
   return settings_();
 }
@@ -587,7 +609,7 @@ function setup(ownerEmail, ownerPassword) {
   bulkAppend_('image_subcategories', SEED.subcategories.map(function (s) { subSeq[s.category_code] = (subSeq[s.category_code] || 0) + 1; return { id: s.category_code + '-' + ('0' + subSeq[s.category_code]).slice(-2), category_code: s.category_code, name: s.name, sort: s.sort }; }));
   bulkAppend_('images', SEED.images.map(function (i) {
     return { uid: Utilities.getUuid(), image_id: i.image_id, prefix: i.prefix, seq: i.seq, original_filename: i.original_filename, display_name: i.display_name, category_code: i.category_code,
-      subcategory: i.subcategory, project_no: '', source: 'site', file_id: '', url: i.url, alt_text: i.alt_text, width: i.width, height: i.height, bytes: i.bytes, mime: 'image/jpeg',
+      subcategory: i.subcategory, project_no: '', source: 'site', file_id: '', url: i.url, alt_text: i.alt_text, width: i.width, height: i.height, bytes: i.bytes, mime: i.mime || 'image/jpeg',
       upload_date: t, updated_at: t, display_order: i.display_order, status: 'active', notes: i.notes };
   }));
   bulkAppend_('website_sections', SEED.slots);
@@ -625,23 +647,181 @@ function resetOwnerPassword() {
   Logger.log('Login: ' + r.email + '   New temporary password: ' + pwd);
 }
 
-/* Run from the editor after pasting a newer Seed.gs (generated when a developer adds image spots to the website).
-   Adds new placement keys, updates labels/sizes of existing ones, keeps every current image choice. */
-function syncPlacements() {
-  var ts = table_('website_sections'), ta = table_('image_assignments'), have = index_(ts.rows, 'slot_key'), asg = index_(ta.rows, 'slot_key');
-  var added = [], seedKeys = {};
-  SEED.slots.forEach(function (s) {
-    seedKeys[s.slot_key] = 1;
-    if (have[s.slot_key]) { for (var k in s) have[s.slot_key][k] = s[k]; }
-    else { ts.rows.push(s); added.push(s.slot_key); }
-    if (!asg[s.slot_key]) ta.rows.push({ slot_key: s.slot_key, image_id: SEED.assignments[s.slot_key] || '', updated_at: now_(), updated_by: 'sync' });
-  });
-  writeTable_(ts); writeTable_(ta);
-  var gone = Object.keys(have).filter(function (k) { return !seedKeys[k]; });
-  Logger.log('Added ' + added.length + ' placements: ' + added.join(', '));
-  if (gone.length) Logger.log('No longer on the website (kept, harmless): ' + gone.join(', '));
-}
+/* Run from the editor after pasting a newer Seed.gs (it comes with every website update).
+   - adds new images (matched by their website file), placements, categories and subcategories
+   - points every placement that nobody has changed in the admin panel to its new image
+   - keeps every choice made in the admin panel (placements you changed, your uploads, projects)
+   - retires old built-in images that are no longer on the website and are not used
+   - publishes, so the live website shows the result straight away */
+function syncWebsite() {
+  if (!PROPS.getProperty('DB_ID')) throw new Error('Run setup first.');
+  var lock = LockService.getScriptLock(); lock.waitLock(30000);
+  try {
+    _memo = {};
+    var t = now_(), log = [];
+    // 1. categories & subcategories
+    var tc = table_('image_categories'), haveCat = index_(tc.rows, 'code'), nc = 0;
+    SEED.categories.forEach(function (c) { if (!haveCat[c.code]) { tc.rows.push(c); nc++; } });
+    if (nc) writeTable_(tc);
+    var ts = table_('image_subcategories'), nsub = 0, seen = {}, usedSubId = {};
+    ts.rows.forEach(function (r) { seen[r.category_code + '|' + r.name] = 1; usedSubId[r.id] = 1; });
+    SEED.subcategories.forEach(function (s) {
+      if (seen[s.category_code + '|' + s.name]) return;
+      var n = ts.rows.filter(function (r) { return r.category_code === s.category_code; }).length + 1, id;
+      do { id = s.category_code + '-' + ('0' + n).slice(-2); n++; } while (usedSubId[id]);
+      usedSubId[id] = 1; seen[s.category_code + '|' + s.name] = 1;
+      ts.rows.push({ id: id, category_code: s.category_code, name: s.name, sort: s.sort }); nsub++;
+    });
+    if (nsub) writeTable_(ts);
+    log.push('Categories added: ' + nc + ', subcategories added: ' + nsub);
 
+    // 2. images (matched by website file path)
+    var ti = table_('images'), byUrl = {}, ids = {}, maxSeq = {}, idMap = {}, added = [], refreshed = 0;
+    ti.rows.forEach(function (r) { ids[r.image_id] = 1; if (r.url && r.status !== 'deleted') byUrl[r.url] = r; maxSeq[r.prefix] = Math.max(maxSeq[r.prefix] || 0, Number(r.seq) || 0); });
+    var tcount = table_('counters'), cnt = index_(tcount.rows, 'prefix');
+    Object.keys(cnt).forEach(function (k) { maxSeq[k] = Math.max(maxSeq[k] || 0, Number(cnt[k].last_seq) || 0); });
+    var seedUrls = {};
+    SEED.images.forEach(function (si) {
+      seedUrls[si.url] = 1;
+      var r = byUrl[si.url];
+      if (r) {
+        idMap[si.image_id] = r.image_id;
+        var untouched = !r.updated_at || r.updated_at === r.upload_date;
+        r.width = si.width; r.height = si.height; r.bytes = si.bytes; r.mime = si.mime || r.mime;
+        if (/PLACEHOLDER/.test(r.notes) || untouched) r.notes = si.notes || '';
+        if (untouched) { r.display_name = si.display_name; r.alt_text = si.alt_text; r.subcategory = si.subcategory; }
+        refreshed++;
+        return;
+      }
+      var id = si.image_id, seq = si.seq;
+      if (ids[id]) { seq = (maxSeq[si.prefix] || 0) + 1; id = formatId_(si.prefix, seq); }
+      maxSeq[si.prefix] = Math.max(maxSeq[si.prefix] || 0, seq);
+      ids[id] = 1; idMap[si.image_id] = id;
+      ti.rows.push({ uid: Utilities.getUuid(), image_id: id, prefix: si.prefix, seq: seq, original_filename: si.original_filename, display_name: si.display_name, category_code: si.category_code,
+        subcategory: si.subcategory, project_no: '', source: 'site', file_id: '', url: si.url, alt_text: si.alt_text, width: si.width, height: si.height, bytes: si.bytes, mime: si.mime || 'image/jpeg',
+        upload_date: t, updated_at: t, display_order: seq, status: 'active', notes: si.notes || '' });
+      added.push(id + ' ' + si.display_name);
+    });
+    Object.keys(maxSeq).forEach(function (k) { if (!cnt[k]) { cnt[k] = { prefix: k, last_seq: 0 }; tcount.rows.push(cnt[k]); } cnt[k].last_seq = Math.max(Number(cnt[k].last_seq) || 0, maxSeq[k]); });
+    writeTable_(tcount);
+    log.push('Images added: ' + added.length + (added.length ? ' (' + added.join(', ') + ')' : '') + ' · built-in images refreshed: ' + refreshed);
+
+    // 3. placements
+    var tw = table_('website_sections'), haveSlot = index_(tw.rows, 'slot_key'), seedKeys = {}, newSlots = [];
+    SEED.slots.forEach(function (s) { seedKeys[s.slot_key] = 1; if (haveSlot[s.slot_key]) { for (var k in s) haveSlot[s.slot_key][k] = s[k]; } else { tw.rows.push(s); newSlots.push(s.slot_key); } });
+    var gone = tw.rows.filter(function (r) { return !seedKeys[r.slot_key]; }).map(function (r) { return r.slot_key; });
+    tw.rows = tw.rows.filter(function (r) { return seedKeys[r.slot_key]; });
+    writeTable_(tw);
+    var imgById = index_(ti.rows, 'image_id');
+    var ta = table_('image_assignments'), asg = index_(ta.rows, 'slot_key'), changed = [], kept = [], swappedOut = [];
+    SEED.slots.forEach(function (s) {
+      var target = SEED.assignments[s.slot_key] ? (idMap[SEED.assignments[s.slot_key]] || '') : '';
+      var a = asg[s.slot_key];
+      if (!a) { ta.rows.push({ slot_key: s.slot_key, image_id: target, updated_at: t, updated_by: 'sync' }); if (target) changed.push(s.slot_key); return; }
+      if (a.image_id === target) return;
+      if (a.updated_by === 'setup' || a.updated_by === 'sync') {
+        var cur = imgById[a.image_id];
+        if (cur && cur.source === 'drive') swappedOut.push(s.slot_key + ' (was ' + a.image_id + ')');
+        a.image_id = target; a.updated_at = t; a.updated_by = 'sync'; changed.push(s.slot_key);
+      } else kept.push(s.slot_key + ' = ' + a.image_id);
+    });
+    ta.rows = ta.rows.filter(function (r) { return seedKeys[r.slot_key]; });
+    writeTable_(ta);
+    log.push('Placements added: ' + newSlots.length + ' · removed (no longer on the website): ' + gone.length + (gone.length ? ' (' + gone.join(', ') + ')' : ''));
+    log.push('Placements updated to the new website images: ' + changed.length);
+    if (kept.length) log.push('Kept your own choices: ' + kept.join(', '));
+    if (swappedOut.length) log.push('These spots now show the new website image instead of a photo uploaded earlier (the photo is still in the library — pick it again in the admin panel if you want it back): ' + swappedOut.join(', '));
+
+    // 4. retire old built-in images that are no longer part of the website and unused
+    var usedIds = {};
+    ta.rows.forEach(function (r) { if (r.image_id) usedIds[r.image_id] = 1; });
+    rows_('projects').forEach(function (p) { if (p.featured_image_id) usedIds[p.featured_image_id] = 1; });
+    rows_('project_images').forEach(function (p) { usedIds[p.image_id] = 1; });
+    var retired = [];
+    ti.rows.forEach(function (r) {
+      if (r.source === 'site' && r.status !== 'deleted' && r.url && !seedUrls[r.url] && !usedIds[r.image_id]) { r.status = 'deleted'; r.notes = 'Retired by syncWebsite ' + t.slice(0, 10) + ': file no longer on the website.'; retired.push(r.image_id); }
+    });
+    writeTable_(ti);
+    if (retired.length) log.push('Retired old placeholder images: ' + retired.join(', '));
+
+    // 5. publish
+    _memo = {};
+    var pub = publish_({ email: 'syncWebsite' });
+    log.push('Published v' + pub.v + ' — the website now shows the result.');
+    audit_({ email: 'syncWebsite' }, 'sync website', log.join(' | ').slice(0, 1000));
+    Logger.log('================ SUBHA INFRA CMS — WEBSITE SYNC ================');
+    log.forEach(function (l) { Logger.log(l); });
+  } finally { lock.releaseLock(); }
+}
+/* Older name, kept so existing instructions still work. */
+function syncPlacements() { syncWebsite(); }
+
+/* =====================================================================
+   ENQUIRIES (website contact form + pop-up)
+   ===================================================================== */
+function clean_(v, max) {
+  var s = String(v == null ? '' : v).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').trim().slice(0, max || 200);
+  return /^[=@]/.test(s) ? ' ' + s : s;   // never let a value act as a spreadsheet formula
+}
+function saveEnquiry_(d) {
+  if (!PROPS.getProperty('DB_ID')) return { ok: false, error: 'The CMS is not set up yet.' };
+  if (d.website) return { ok: true };                        // honeypot filled: a bot — pretend success
+  if (Number(d.t) > 0 && Number(d.t) < 1500) return { ok: true }; // submitted faster than a person can type
+  var q = { name: clean_(d.name, 80), phone: clean_(d.phone, 20), email: clean_(d.email, 120).toLowerCase(), service: clean_(d.service, 80), location: clean_(d.location, 80),
+    message: clean_(d.message, 2000), source: clean_(d.source, 60), page: clean_(d.page, 200) };
+  var digits = q.phone.replace(/\D/g, '');
+  if (!q.name) return { ok: false, error: 'Please enter your name.' };
+  if (digits.length < 10 || digits.length > 13) return { ok: false, error: 'Please enter a valid mobile number.' };
+  if (q.email && !/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(q.email)) return { ok: false, error: 'Please enter a valid email address.' };
+  var cache = CacheService.getScriptCache();
+  var gk = 'enq:min:' + Math.floor(Date.now() / 60000), pk = 'enq:ph:' + digits.slice(-10);
+  if (Number(cache.get(gk) || 0) >= 20) return { ok: false, error: 'Too many enquiries right now. Please call us instead.' };
+  if (Number(cache.get(pk) || 0) >= 3) return { ok: true, duplicate: true };
+  var lock = LockService.getScriptLock(); lock.waitLock(20000);
+  try {
+    var tcount = table_('counters'), c = tcount.rows.filter(function (x) { return x.prefix === 'ENQ'; })[0];
+    if (!c) { c = { prefix: 'ENQ', last_seq: 0 }; tcount.rows.push(c); }
+    c.last_seq = (Number(c.last_seq) || 0) + 1; writeTable_(tcount);
+    q.id = 'ENQ-' + ('000' + c.last_seq).slice(-4); q.time = now_(); q.status = 'New'; q.notes = ''; q.updated_at = q.time; q.updated_by = 'website';
+    appendRow_('enquiries', q);
+  } finally { lock.releaseLock(); }
+  cache.put(gk, String(Number(cache.get(gk) || 0) + 1), 120);
+  cache.put(pk, String(Number(cache.get(pk) || 0) + 1), 3600);
+  try { notifyEnquiry_(q); } catch (e) { audit_({ email: 'website' }, 'enquiry email failed', e.message); }
+  return { ok: true, id: q.id };
+}
+function enquiryRecipients_() {
+  var s = settings_(), list = String(s.notify_email || '').split(/[,;\s]+/).filter(function (x) { return /@/.test(x); });
+  if (!list.length) list = rows_('administrators').filter(function (a) { return a.role === 'owner' && truthy_(a.active); }).map(function (a) { return a.email; });
+  return list;
+}
+function notifyEnquiry_(q) {
+  var to = enquiryRecipients_(); if (!to.length) return;
+  var e = function (s) { return String(s || '—').replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var wa = 'https://wa.me/' + q.phone.replace(/\D/g, '').replace(/^(\d{10})$/, '91$1');
+  var row = function (k, v) { return '<tr><td style="padding:6px 14px 6px 0;color:#6B7480;white-space:nowrap">' + k + '</td><td style="padding:6px 0;color:#101D2B"><b>' + v + '</b></td></tr>'; };
+  var html = '<div style="font-family:Arial,sans-serif;max-width:560px"><div style="background:#101D2B;color:#fff;padding:18px 22px;border-bottom:3px solid #B69A70"><b style="letter-spacing:.18em">SUBHA INFRA</b><div style="color:#E5CF9F;font-size:12px;letter-spacing:.2em;margin-top:4px">NEW WEBSITE ENQUIRY · ' + e(q.id) + '</div></div>'
+    + '<div style="padding:18px 22px;border:1px solid #e6e2da;border-top:0"><table style="font-size:14px;border-collapse:collapse">' + row('Name', e(q.name)) + row('Mobile', '<a href="tel:' + e(q.phone) + '">' + e(q.phone) + '</a> · <a href="' + wa + '">WhatsApp</a>') + row('Email', q.email ? '<a href="mailto:' + e(q.email) + '">' + e(q.email) + '</a>' : '—')
+    + row('Service', e(q.service)) + row('Location', e(q.location)) + row('From', e(q.source) + ' · ' + e(q.page)) + '</table>'
+    + '<div style="margin-top:14px;padding:12px 14px;background:#F5F3EE;color:#101D2B;font-size:14px;white-space:pre-wrap">' + e(q.message || '(no message)') + '</div>'
+    + '<p style="font-size:12px;color:#6B7480;margin-top:14px">All enquiries: admin panel → Enquiries.</p></div></div>';
+  MailApp.sendEmail({ to: to.join(','), subject: 'New enquiry ' + q.id + ' — ' + q.name + (q.service ? ' (' + q.service + ')' : ''), htmlBody: html, replyTo: q.email || undefined, name: 'SUBHA INFRA Website' });
+}
+function updateEnquiry_(user, a) {
+  var t = table_('enquiries'), r = t.rows.filter(function (x) { return x.id === a.id; })[0];
+  if (!r) throw new Error('Enquiry ' + a.id + ' not found');
+  if (a.status !== undefined) { if (ENQUIRY_STATUSES.indexOf(a.status) < 0) throw new Error('Invalid status'); r.status = a.status; }
+  if (a.notes !== undefined) r.notes = clean_(a.notes, 1000);
+  r.updated_at = now_(); r.updated_by = user.email;
+  writeTable_(t);
+  audit_(user, 'enquiry', r.id + ' ' + r.status);
+  return r;
+}
+/* Run from the editor to check that enquiry emails arrive (authorises email sending the first time). */
+function testEnquiryEmail() {
+  notifyEnquiry_({ id: 'ENQ-TEST', name: 'Test visitor', phone: '+91 90000 00000', email: '', service: 'Architectural design', location: 'Bengaluru', message: 'This is a test enquiry from testEnquiryEmail().', source: 'Test', page: '/' });
+  Logger.log('Test email sent to: ' + enquiryRecipients_().join(', '));
+}
 /* Run from the editor: Preview / "Open page" links and original-photo thumbnails use your local test server. */
 function useLocalSite() { setSetting_('site_url', 'http://localhost:9090'); Logger.log('Website address is now http://localhost:9090'); }
 
@@ -658,8 +838,7 @@ var _memo = {};
 function db_() { if (!_memo.ss) _memo.ss = SpreadsheetApp.openById(PROPS.getProperty('DB_ID')); return _memo.ss; }
 
 function table_(name) {
-  var sh = db_().getSheetByName(name);
-  if (!sh) throw new Error('Missing sheet ' + name + '. Run setup().');
+  var sh = ensureSheet_(name);
   var head = TABLES[name];
   var last = sh.getLastRow();
   var vals = last > 1 ? sh.getRange(2, 1, last - 1, head.length).getValues() : [];
@@ -684,8 +863,20 @@ function writeTable_(t) {
   delete _memo['t:' + t.name];
 }
 
+/* Returns the sheet for a table, creating it (with its header row) if a newer version added the table. */
+function ensureSheet_(name) {
+  var ss = db_(), sh = ss.getSheetByName(name);
+  if (sh) return sh;
+  if (!TABLES[name]) throw new Error('Unknown table ' + name);
+  sh = ss.insertSheet(name);
+  sh.getRange(1, 1, 1, TABLES[name].length).setValues([TABLES[name]]).setFontWeight('bold').setBackground('#101D2B').setFontColor('#ffffff');
+  sh.getRange(1, 1, sh.getMaxRows(), TABLES[name].length).setNumberFormat('@');
+  sh.setFrozenRows(1);
+  return sh;
+}
+
 function appendRow_(name, obj) {
-  var sh = db_().getSheetByName(name);
+  var sh = ensureSheet_(name);
   var r = sh.getLastRow() + 1;
   sh.getRange(r, 1, 1, TABLES[name].length).setNumberFormat('@').setValues([TABLES[name].map(function (h) { return obj[h] == null ? '' : String(obj[h]); })]);
   delete _memo['t:' + name];
@@ -693,7 +884,7 @@ function appendRow_(name, obj) {
 
 function bulkAppend_(name, list) {
   if (!list.length) return;
-  var sh = db_().getSheetByName(name), head = TABLES[name];
+  var sh = ensureSheet_(name), head = TABLES[name];
   sh.getRange(sh.getLastRow() + 1, 1, list.length, head.length).setNumberFormat('@')
     .setValues(list.map(function (o) { return head.map(function (h) { return o[h] == null ? '' : String(o[h]); }); }));
   delete _memo['t:' + name];

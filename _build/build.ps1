@@ -17,6 +17,8 @@ function Write-Text($p, $s) { [IO.File]::WriteAllText($p, $s, $utf8) }
 function Enc($s) { [System.Net.WebUtility]::HtmlEncode($s) }
 
 $site = 'https://www.subhainfra.com/'
+$PHONE = '+91-7342494727'
+$AREAS = @(@{ '@type' = 'City'; name = 'Bengaluru' }, @{ '@type' = 'State'; name = 'Karnataka' }, @{ '@type' = 'State'; name = 'Andhra Pradesh' }, @{ '@type' = 'State'; name = 'Telangana' }, @{ '@type' = 'State'; name = 'Tamil Nadu' })
 $head = Read-Text "$B\partials\head.html"
 $header = Read-Text "$B\partials\header.html"
 $footer = Read-Text "$B\partials\footer.html"
@@ -174,11 +176,37 @@ function Expand($html) {
   $html = [regex]::Replace($html, '\{\{([RCFPIST]\d\d)\}\}', { param($m) ImgPath $m.Groups[1].Value })
   $html
 }
+function Json($o) { ($o | ConvertTo-Json -Depth 10 -Compress) }
+function Ld($o) { '<script type="application/ld+json">' + (Json $o) + '</script>' }
+function PlainTitle($t) { [System.Net.WebUtility]::HtmlDecode((($t -split '\|')[0]).Trim()) }
+# Structured data added to every page: breadcrumbs, services, FAQs (search-engine rich results)
+function Page-Schema($file, $meta, $content) {
+  $route = Route $file; $out = ''
+  if ($route -ne '/' -and $file -ne '404.html' -and -not $meta.robots) {
+    $items = @(@{ '@type' = 'ListItem'; position = 1; name = 'Home'; item = $site })
+    $pos = 2
+    if ($route -like '/services/?*') { $items += @{ '@type' = 'ListItem'; position = $pos; name = 'Services'; item = $site + 'services/' }; $pos++ }
+    if ($route -like '/projects/?*') { $items += @{ '@type' = 'ListItem'; position = $pos; name = 'Projects'; item = $site + 'projects/' }; $pos++ }
+    $items += @{ '@type' = 'ListItem'; position = $pos; name = (PlainTitle $meta.title); item = $site + $route.TrimStart('/') }
+    $out += Ld @{ '@context' = 'https://schema.org'; '@type' = 'BreadcrumbList'; itemListElement = $items }
+  }
+  if ($file -like 'service-*.html') {
+    $out += Ld @{ '@context' = 'https://schema.org'; '@type' = 'Service'; name = (PlainTitle $meta.title); serviceType = (PlainTitle $meta.title); description = [System.Net.WebUtility]::HtmlDecode($meta.description); url = $site + $route.TrimStart('/')
+      provider = @{ '@type' = 'GeneralContractor'; name = 'SUBHA INFRA'; url = $site; telephone = $PHONE }; areaServed = $AREAS }
+  }
+  $qa = [regex]::Matches($content, '<details[^>]*><summary>((?:(?!</summary>).)*?)<i></i></summary><div class="ans">((?:(?!</details>).)*?)</div></details>', 'Singleline')
+  if ($qa.Count -ge 2) {
+    $strip = { param($s) [System.Net.WebUtility]::HtmlDecode(([regex]::Replace(([regex]::Replace($s, '\{\{[A-Z_0-9]+\}\}', '')), '<[^>]+>', ''))).Trim() }
+    $out += Ld @{ '@context' = 'https://schema.org'; '@type' = 'FAQPage'; mainEntity = @($qa | ForEach-Object { @{ '@type' = 'Question'; name = (& $strip $_.Groups[1].Value); acceptedAnswer = @{ '@type' = 'Answer'; text = (& $strip $_.Groups[2].Value) } } }) }
+  }
+  $out
+}
 function Build-Page($file, $meta, $content) {
   $h = $head.Replace('{{TITLE}}', $meta.title).Replace('{{DESC}}', $meta.description).Replace('{{FILE}}', (Route $file).TrimStart('/'))
   $h = $h.Replace('{{OG}}', $(if ($meta.image) { $meta.image } else { '/assets/project-images/subha-infra-peb-structures-01.jpg' }).TrimStart('/'))
   $h = $h.Replace('{{BODYCLASS}}', [string]$meta.bodyclass).Replace('{{ROBOTS}}', $(if ($meta.robots) { $meta.robots } else { 'index, follow' }))
-  $h = $h.Replace('{{SCHEMA}}', [string]$meta.schema)
+  $h = $h.Replace('{{KEYWORDS}}', $(if ($meta.keywords) { '<meta name="keywords" content="' + $meta.keywords + '">' } else { '' }))
+  $h = $h.Replace('{{SCHEMA}}', [string]$meta.schema + (Page-Schema $file $meta $content))
   $hd = $header
   foreach ($k in 'home', 'about', 'services', 'projects', 'packages', 'team', 'insights', 'contact') {
     $hd = $hd.Replace("{{CUR_$k}}", $(if ($meta.nav -eq $k) { 'aria-current="page"' } else { '' }))
@@ -196,7 +224,24 @@ function Build-Page($file, $meta, $content) {
   if (-not $meta.robots) { [void]$built.Add($route) }
 }
 
-$orgSchema = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"SUBHA INFRA","slogan":"Designed to Inspire","url":"https://www.subhainfra.com/","logo":"https://www.subhainfra.com/assets/images/brand/subha-infra-logo.png","email":"info@subhainfra.com","telephone":"+91-7342494727","address":{"@type":"PostalAddress","addressLocality":"Sahakar Nagar, Bengaluru","addressRegion":"Karnataka","addressCountry":"IN"},"founder":{"@type":"Person","name":"Surya Prathap","jobTitle":"CEO & Founder"}}</script>'
+$svcList = @(
+  @('Architectural & Interior Design', 'services/architectural-design/', 'Residential, commercial and industrial architectural design, interior design, 3D visualisation and space planning.'),
+  @('Structural Design & Engineering', 'services/structural-engineering/', 'RCC and steel structural design, building and industrial structural engineering, structural drawings and detailing.'),
+  @('Design & Build', 'services/design-and-build/', 'Residential, commercial and industrial design & build, turnkey construction and complete construction services.'),
+  @('PEB Structures', 'services/peb-structures/', 'PEB building design, industrial PEB structures, warehouses, factory sheds and pre-engineered steel buildings.'),
+  @('Steel, Roofing & Cladding', 'services/steel-structures/', 'Structural steel fabrication, steel structure manufacturing, metal roofing, PUF panel roofing, roof and wall cladding.'),
+  @('Facades, Skylights & Tensile Structures', 'services/facade-engineering/', 'Architectural facade design, glass and ACP facades, skylight structures and tensile fabric structures.')
+)
+$orgSchema = (Ld @{ '@context' = 'https://schema.org'; '@type' = @('GeneralContractor', 'ProfessionalService'); '@id' = $site + '#organization'; name = 'SUBHA INFRA'; slogan = 'Designed to Inspire. Engineered to Perform.'
+    description = 'Architecture, structural engineering and construction company in Bangalore delivering integrated solutions for residential, commercial and industrial projects.'
+    url = $site; logo = $site + 'assets/images/brand/subha-infra-logo.png'; image = $site + 'assets/images/home/hero-01-garden-restaurant-pavilion.jpg'
+    email = 'info@subhainfra.com'; telephone = $PHONE; priceRange = '₹₹'
+    address = @{ '@type' = 'PostalAddress'; streetAddress = 'Sahakar Nagar'; addressLocality = 'Bengaluru'; addressRegion = 'Karnataka'; postalCode = '560092'; addressCountry = 'IN' }
+    areaServed = $AREAS
+    founder = @{ '@type' = 'Person'; name = 'Surya Prathap'; jobTitle = 'CEO & Founder' }
+    knowsAbout = @('Architectural design', 'Interior design', 'Structural engineering', 'RCC structural design', 'Steel structure design', 'Design and build', 'Turnkey construction', 'PEB structures', 'Pre-engineered buildings', 'Warehouses', 'Factory sheds', 'Metal roofing', 'PUF panel roofing', 'Roof and wall cladding', 'Facade design', 'ACP facades', 'Glass facades', 'Skylights', 'Tensile fabric structures')
+    hasOfferCatalog = @{ '@type' = 'OfferCatalog'; name = 'Architecture, engineering and construction services'; itemListElement = @($svcList | ForEach-Object { @{ '@type' = 'Offer'; itemOffered = @{ '@type' = 'Service'; name = $_[0]; description = $_[2]; url = $site + $_[1] } } }) }
+  }) + (Ld @{ '@context' = 'https://schema.org'; '@type' = 'WebSite'; name = 'SUBHA INFRA'; url = $site; publisher = @{ '@id' = $site + '#organization' } })
 
 Get-ChildItem "$B\pages\*.html" | ForEach-Object {
   $src = Read-Text $_.FullName

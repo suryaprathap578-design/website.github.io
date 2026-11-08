@@ -28,12 +28,13 @@ $Pages = [ordered]@{
     'NAV-SVC-FACADE|Services menu · Facade Engineering', 'NAV-SVC-TENS|Services menu · Tensile & Special',
     'NAV-PRJ-RES|Projects menu · Residential', 'NAV-PRJ-COM|Projects menu · Commercial', 'NAV-PRJ-IND|Projects menu · Industrial', 'NAV-PRJ-PEB|Projects menu · PEB Structures',
     'NAV-PRJ-STEEL|Projects menu · Steel Structures', 'NAV-PRJ-FACADE|Projects menu · Facades', 'NAV-PRJ-TENS|Projects menu · Tensile Structures', 'NAV-PRJ-PKG|Projects menu · Packages & Estimate') }
-  'partials\journey.html' = @{ page = 'Design journey (Home + Packages)'; url = '/#journey'; slots = @(
-    'JOURNEY-1|Design journey · Step 1 Consultation & brief', 'JOURNEY-2|Design journey · Step 2 Architectural floor plan', 'JOURNEY-3|Design journey · Step 3 3D space layout',
-    'JOURNEY-4|Design journey · Step 4 Structural drawings', 'JOURNEY-5|Design journey · Step 5 3D elevation design', 'JOURNEY-6|Design journey · Step 6 Approval drawings',
-    'JOURNEY-7|Design journey · Step 7 3D interior design', 'JOURNEY-8|Design journey · Step 8 Construction & handover') }
+  'partials\journey.html' = @{ page = 'Project journey (Home + Packages)'; url = '/#journey'; slots = @(
+    'JOURNEY-STEP-1|Design journey · Step 1 Consultation & brief', 'JOURNEY-STEP-2|Design journey · Step 2 Architectural floor plans', 'JOURNEY-STEP-3|Design journey · Step 3 3D space layout',
+    'JOURNEY-STEP-4|Design journey · Step 4 Structural drawings', 'JOURNEY-STEP-5|Design journey · Step 5 3D elevation design', 'JOURNEY-STEP-6|Design journey · Step 6 Approval drawings',
+    'JOURNEY-STEP-7|Design journey · Step 7 3D interior design', 'JOURNEY-STEP-8|Design journey · Step 8 Construction & handover') }
   'pages\index.html' = @{ page = 'Home (landing page)'; url = '/'; slots = @(
-    'HOME-HERO-1|Hero slider · Slide 1 (first image visitors see)', 'HOME-HERO-2|Hero slider · Slide 2', 'HOME-HERO-3|Hero slider · Slide 3', 'HOME-HERO-4|Hero slider · Slide 4', 'HOME-HERO-5|Hero slider · Slide 5', 'HOME-HERO-6|Hero slider · Slide 6',
+    'HERO-SLIDE-1|Hero slider · Slide 1 (first image visitors see)', 'HERO-SLIDE-2|Hero slider · Slide 2', 'HERO-SLIDE-3|Hero slider · Slide 3', 'HERO-SLIDE-4|Hero slider · Slide 4',
+    'HERO-SLIDE-5|Hero slider · Slide 5', 'HERO-SLIDE-6|Hero slider · Slide 6', 'HERO-SLIDE-7|Hero slider · Slide 7', 'HERO-SLIDE-8|Hero slider · Slide 8',
     'HOME-ABOUT-1|Who we are · Large image', 'HOME-ABOUT-2|Who we are · Small overlapping image',
     'HOME-SVC-ARCH|Core capabilities · 01 Architecture & Interior', 'HOME-SVC-STR|Core capabilities · 02 Structural Design', 'HOME-SVC-DB|Core capabilities · 03 Design & Build',
     'HOME-SVC-PEB|Core capabilities · 04 Steel & PEB', 'HOME-SVC-FACADE|Core capabilities · 05 Facades', 'HOME-SVC-TENS|Core capabilities · 06 Tensile & Special',
@@ -60,10 +61,7 @@ $Pages = [ordered]@{
     'SVC-STR-PREV|Bottom navigation · Previous service', 'SVC-STR-NEXT|Bottom navigation · Next service') }
   'pages\service-interior-design.html' = @{ page = 'Service · Interior Design'; url = '/services/interior-design/'; slots = @(
     'SVC-INT-HERO|Page header · Side image',
-    'SVC-INT-GALLERY-1|Interior gallery · 1 Living room', 'SVC-INT-GALLERY-2|Interior gallery · 2 Kitchen & dining', 'SVC-INT-GALLERY-3|Interior gallery · 3 Master bedroom',
-    'SVC-INT-GALLERY-4|Interior gallery · 4 Lounge', 'SVC-INT-GALLERY-5|Interior gallery · 5 Home office', 'SVC-INT-GALLERY-6|Interior gallery · 6 Showroom',
-    'SVC-INT-GALLERY-7|Interior gallery · 7 Hospitality', 'SVC-INT-GALLERY-8|Interior gallery · 8 Lobby', 'SVC-INT-GALLERY-9|Interior gallery · 9 Workspace',
-    'SVC-INT-RESIDENTIAL|Sectors · Residential interiors', 'SVC-INT-COMMERCIAL|Sectors · Commercial interiors', 'SVC-INT-CORPORATE|Sectors · Corporate interiors',
+    'SVC-INT-GALLERY-1|Interior design work · 1 Large (living room)', 'SVC-INT-GALLERY-2|Interior design work · 2 Space planning', 'SVC-INT-GALLERY-3|Interior design work · 3 Layout & materials', 'SVC-INT-GALLERY-4|Interior design work · 4 Wide (material selection)',
     'SVC-INT-PREV|Bottom navigation · Previous service', 'SVC-INT-NEXT|Bottom navigation · Next service') }
   'pages\service-design-and-build.html' = @{ page = 'Service · Design & Build'; url = '/services/design-and-build/'; slots = @(
     'SVC-DB-HERO|Page header · Full-width background', 'SVC-DB-SUITED|Suited to · Image', 'SVC-DB-PREV|Bottom navigation · Previous service', 'SVC-DB-NEXT|Bottom navigation · Next service') }
@@ -78,8 +76,8 @@ $Pages = [ordered]@{
     'SVC-FACADE-HERO|Page header · Side image', 'SVC-FACADE-DETAIL|Technical detailing · Image',
     'SVC-FACADE-GALLERY-1|Facade gallery · 1', 'SVC-FACADE-GALLERY-2|Facade gallery · 2', 'SVC-FACADE-GALLERY-3|Facade gallery · 3', 'SVC-FACADE-GALLERY-4|Facade gallery · 4',
     'SVC-FACADE-PREV|Bottom navigation · Previous service', 'SVC-FACADE-NEXT|Bottom navigation · Next service') }
-  'pages\service-tensile-structures.html' = @{ page = 'Service · Tensile & Special Structures'; url = '/services/tensile-structures/'; slots = @(
-    'SVC-TENS-HERO|Page header · Full-width background', 'SVC-TENS-OVERVIEW|Overview · Image', 'SVC-TENS-SCOPE|Our scope · Image',
+  'pages\service-tensile-structures.html' = @{ page = 'Service · Tensile Fabric Structures'; url = '/services/tensile-structures/'; slots = @(
+    'SVC-TENS-HERO|Page header · Full-width background', 'SVC-TENS-OVERVIEW|Overview · Image (conical canopies)', 'SVC-TENS-SCOPE|Our scope · Image (car-park canopy)',
     'SVC-TENS-PREV|Bottom navigation · Previous service', 'SVC-TENS-NEXT|Bottom navigation · Next service') }
   'pages\projects.html' = @{ page = 'Projects (portfolio page)'; url = '/projects/'; slots = @('PROJECTS-HERO|Page header · Full-width background', 'PROJECTS-STEEL|Steel on site · Image') }
   'pages\packages.html' = @{ page = 'Packages & Estimate'; url = '/packages/'; slots = @(
@@ -92,23 +90,23 @@ $Pages = [ordered]@{
   'pages\quality.html' = @{ page = 'Quality'; url = '/quality/'; slots = @(
     'QUALITY-HERO|Page header · Full-width background', 'QUALITY-GATES-1|Three gates of quality · Image 1', 'QUALITY-GATES-2|Three gates of quality · Image 2 (wide)', 'QUALITY-CTA-BG|Engineered to endure (CTA) · Background') }
   'pages\team.html' = @{ page = 'Team'; url = '/team/'; slots = @(
-    'TEAM-CEO|Leadership · CEO portrait', 'TEAM-MEMBER-1|Team grid · Member 1', 'TEAM-MEMBER-2|Team grid · Member 2', 'TEAM-MEMBER-3|Team grid · Member 3', 'TEAM-CTA-BG|Meet the team (CTA) · Background') }
+    'TEAM-CEO|Leadership · CEO portrait (Surya Prathap)', 'TEAM-MEMBER-1|Team photos · Member 1 (Principal Architect)', 'TEAM-MEMBER-2|Team photos · Member 2 (Structural Engineer)', 'TEAM-MEMBER-3|Team photos · Member 3 (Project Manager)', 'TEAM-CTA-BG|Meet the team (CTA) · Background') }
   'pages\careers.html' = @{ page = 'Careers'; url = '/careers/'; slots = @('CAREERS-HERO|Page header · Side image') }
   'pages\contact.html' = @{ page = 'Contact'; url = '/contact/'; slots = @('CONTACT-HERO|Page header · Background image') }
 }
 # Placements rendered by js/main.js (no <img> in the source)
 $ExtraSlots = @(
-  @{ key = 'TEAM-MEMBER-4'; label = 'Team grid · Member 4'; page = 'Team'; url = '/team/' },
-  @{ key = 'TEAM-MEMBER-5'; label = 'Team grid · Member 5'; page = 'Team'; url = '/team/' },
-  @{ key = 'TEAM-MEMBER-6'; label = 'Team grid · Member 6'; page = 'Team'; url = '/team/' },
-  @{ key = 'TEAM-GROUP'; label = 'One team · Group photo'; page = 'Team'; url = '/team/' }
+  @{ key = 'TEAM-MEMBER-4'; label = 'Team photos · Member 4 (PEB & Steel Design Lead)'; page = 'Team'; url = '/team/' },
+  @{ key = 'TEAM-MEMBER-5'; label = 'Team photos · Member 5 (Interior Designer)'; page = 'Team'; url = '/team/' },
+  @{ key = 'TEAM-MEMBER-6'; label = 'Team photos · Member 6 (Site Engineer)'; page = 'Team'; url = '/team/' },
+  @{ key = 'TEAM-GROUP'; label = 'Team photos · Group photo (whole team)'; page = 'Team'; url = '/team/' }
 )
 
 # ------------------------------------------------------------------
 # CATEGORIES & SUBCATEGORIES
 # ------------------------------------------------------------------
 $Categories = @(
-  @('HOME', 'Landing Page', 'Landing Page Images', '/', 'Hero,Banner,Slider,About,Services,Projects,CTA,Background'),
+  @('HOME', 'Landing Page', 'Landing Page Images', '/', 'Hero Slider,Banner,About,Services,Projects,CTA,Background'),
   @('ARCH', 'Architectural Design', 'Architectural & Interior Design', '/services/architectural-design/', 'Modern Houses,Contemporary Houses,Luxury Villas,Residential Buildings,Commercial Buildings,Elevation Designs,Exterior Designs,Landscape Architecture,Facade Concepts'),
   @('INT', 'Interior Design', 'Architectural & Interior Design', '/services/interior-design/', 'Living Rooms,Bedrooms,Kitchens,Bathrooms,False Ceilings,Office Interiors,Commercial Interiors,Furniture Designs,Lighting Designs,Custom Interiors'),
   @('STR', 'Structural Design & Engineering', 'Structural Design & Engineering', '/services/structural-engineering/', 'Structural Drawings,RCC Structures,Steel Structures,Foundation Designs,Industrial Structures,Structural Analysis,Framing Systems,Technical Drawings,Engineering Details'),
@@ -118,9 +116,9 @@ $Categories = @(
   @('ROOF', 'Roofing & Cladding', 'Steel, Roofing & Cladding', '/services/steel-structures/', 'Roofing Systems,Wall Cladding,Metal Roofing,Industrial Roofing,Sandwich Panels,PUF Panels'),
   @('FACADE', 'Facades', 'Facades, Skylights & Tensile', '/services/facade-engineering/', 'Architectural Facades,Glass Facades,Aluminium Facades,Metal Facades,Special Architectural Structures'),
   @('SKY', 'Skylights', 'Facades, Skylights & Tensile', '/services/facade-engineering/', 'Skylight Systems,Roof Skylights'),
-  @('TENS', 'Tensile Structures', 'Facades, Skylights & Tensile', '/services/tensile-structures/', 'Tensile Structures,Entrance Canopies,Fabric Structures,Car Park Structures,Special Structures'),
+  @('TENS', 'Tensile Structures', 'Facades, Skylights & Tensile', '/services/tensile-structures/', 'Fabric Structures,Shade Sails,Conical Canopies,Car Park Structures,Entrance Canopies,Special Structures'),
   @('PROJECT', 'Project Photographs', 'Projects', '/projects/', 'Project Photos,Before,After,Site Progress,Completed'),
-  @('PROC', 'Process & Design Journey', 'Company', '/process/', 'Consultation,Drawings,3D Visualisation,Construction'),
+  @('PROC', 'Process & Design Journey', 'Company', '/process/', 'Consultation,Floor Plans,3D Visualisation,Structural Drawings,Approval Drawings,Construction & Handover'),
   @('TEAM', 'Team', 'Company', '/team/', 'Leadership,Team Members,Group Photos'),
   @('ABOUT', 'About Us', 'Company', '/about/', 'Company,Office,Events,Awards')
 )
@@ -148,9 +146,12 @@ function Add-Img($prefix, $name, $sub, $path, $alt, $code) {
   $id = '{0}-{1:D3}' -f $prefix, $seq[$prefix]
   $full = Join-Path $root $path.TrimStart('/')
   $w = 0; $h = 0; $bytes = 0
-  if (Test-Path $full) { $i = [System.Drawing.Image]::FromFile($full); $w = $i.Width; $h = $i.Height; $i.Dispose(); $bytes = (Get-Item $full).Length }
+  if (Test-Path $full) {
+    if ($full -like '*.svg') { $sv = Read-Text $full; if ($sv -match 'viewBox="0 0 (\d+) (\d+)"') { $w = [int]$Matches[1]; $h = [int]$Matches[2] } }
+    else { $i = [System.Drawing.Image]::FromFile($full); $w = $i.Width; $h = $i.Height; $i.Dispose() }
+    $bytes = (Get-Item $full).Length }
   $o = [pscustomobject]@{ image_id = $id; prefix = $prefix; seq = $seq[$prefix]; original_filename = [IO.Path]::GetFileName($path); display_name = $name; category_code = $prefix
-    subcategory = $sub; url = $path; alt_text = $alt; width = $w; height = $h; bytes = $bytes; notes = ''; display_order = $seq[$prefix] }
+    subcategory = $sub; url = $path; alt_text = $alt; width = $w; height = $h; bytes = $bytes; mime = $(if ($path -like '*.svg') { 'image/svg+xml' } elseif ($path -like '*.png') { 'image/png' } else { 'image/jpeg' }); notes = ''; display_order = $seq[$prefix] }
   [void]$Images.Add($o); $byPath[$path] = $o; if ($code) { $byCode[$code] = $o }
 }
 function Sub-For($p) {
@@ -171,12 +172,19 @@ foreach ($letter in 'R', 'C', 'F', 'P', 'I', 'S', 'T') {
     Add-Img $prefixFor[$letter] $p.title (Sub-For $p) (ImgPath $p.code) ("{0} — {1} by SUBHA INFRA" -f $p.title, $catLabel[$p.primary]) $p.code
   }
 }
-$int = @(@('Living room interior', 'Living Rooms'), @('Kitchen and dining interior', 'Kitchens'), @('Master bedroom interior', 'Bedrooms'), @('Lounge interior', 'Living Rooms'),
-  @('Home office interior', 'Office Interiors'), @('Showroom interior', 'Commercial Interiors'), @('Hospitality interior', 'Commercial Interiors'), @('Lobby interior', 'Commercial Interiors'), @('Workspace interior', 'Office Interiors'))
-for ($k = 0; $k -lt $int.Count; $k++) { Add-Img 'INT' $int[$k][0] $int[$k][1] ('/assets/service-images/interiors/interior-{0:D2}.jpg' -f ($k + 1)) ($int[$k][0] + ' by SUBHA INFRA') $null }
-$jr = @(@('Consultation and brief', 'Consultation'), @('Architectural floor plan', 'Drawings'), @('3D space layout', '3D Visualisation'), @('Structural drawings', 'Drawings'),
-  @('3D elevation design', '3D Visualisation'), @('Approval drawings', 'Drawings'), @('3D interior design', '3D Visualisation'), @('Construction and handover', 'Construction'))
-for ($k = 0; $k -lt $jr.Count; $k++) { Add-Img 'PROC' $jr[$k][0] $jr[$k][1] ('/assets/service-images/journey/journey-{0:D2}.jpg' -f ($k + 1)) $jr[$k][0] $null }
+Add-Img 'INT' 'Double-height living room — 3D interior design' 'Living Rooms' '/assets/service-images/interiors/interior-01.jpg' 'Double-height living room with lounge seating, timber panelling and pendant lights — 3D interior design by SUBHA INFRA' $null
+$jr = @(@('Consultation & brief — client meeting', 'Consultation', 'Architect and client reviewing a floor plan and material samples'), @('Architectural floor plan model', 'Floor Plans', 'Architectural floor plan model with material swatches'),
+  @('3D space layout — furnished floor plan', '3D Visualisation', 'Furnished 3D floor plan of a home'), @('Structural drawings with RCC frame model', 'Structural Drawings', 'RCC column and beam model on structural drawings'),
+  @('3D elevation design model', '3D Visualisation', '3D model of a contemporary house elevation'), @('Approval drawing set — residential G+1', 'Approval Drawings', 'Approval drawing set with elevations, site plan, floor plan and section'))
+for ($k = 0; $k -lt $jr.Count; $k++) { Add-Img 'PROC' $jr[$k][0] $jr[$k][1] ('/assets/service-images/journey/journey-{0:D2}.jpg' -f ($k + 1)) $jr[$k][2] $null }
+$seq['PROC']++   # PROC-007 retired (step 7 now uses the interior image INT-001)
+Add-Img 'PROC' 'Construction & handover — keys to the client' 'Construction & Handover' '/assets/service-images/journey/journey-08.jpg' 'Building under construction with site engineers, and the finished home handed over with keys' $null
+$hero = @(@('hero-01-garden-restaurant-pavilion', 'Garden Restaurant Pavilion'), @('hero-02-evening-pool-pavilion-villa', 'Evening Pool Pavilion Villa'), @('hero-03-colour-clad-hospitality-pavilion', 'Colour-Clad Hospitality Pavilion'),
+  @('hero-04-angular-white-villa', 'Angular White Villa with Louvred Fins'), @('hero-05-timber-rainscreen-residence', 'Timber Rainscreen Residence'), @('hero-06-vertical-fin-timber-villa', 'Vertical-Fin Timber Villa'),
+  @('hero-07-orange-fin-facade-office', 'Orange Fin Facade Office'), @('hero-08-poolside-timber-cantilever-villa', 'Poolside Timber Cantilever Villa'))
+foreach ($x in $hero) { Add-Img 'HOME' $x[1] 'Hero Slider' ('/assets/images/home/' + $x[0] + '.jpg') ($x[1] + ' — design by SUBHA INFRA, Bangalore') $null }
+$tens = @(@('tensile-shade-sails', 'Tensile shade sails over a courtyard (illustration)', 'Shade Sails'), @('tensile-conical-canopies', 'Conical membrane canopies (illustration)', 'Conical Canopies'), @('tensile-car-park-canopy', 'Cantilever car-park canopy (illustration)', 'Car Park Structures'))
+foreach ($x in $tens) { $alt = ($x[1] -replace ' \(illustration\)', '') + ' — tensile fabric structure by SUBHA INFRA'; Add-Img 'TENS' $x[1] $x[2] ('/assets/service-images/tensile/' + $x[0] + '.svg') $alt $null; $Images[$Images.Count - 1].notes = 'Illustration (SVG). Replace with a real project photograph when available — the ID and placements stay the same.' }
 Add-Img 'TEAM' 'Surya Prathap — CEO & Founder' 'Leadership' '/assets/images/team/ceo-surya-prathap.jpg' 'Surya Prathap, CEO and Founder of SUBHA INFRA' $null
 
 # Flag placeholder files that are byte-identical copies of another image

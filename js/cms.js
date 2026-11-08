@@ -85,11 +85,12 @@
     if (a) { a.setAttribute('href', urlFor(m, 2400)); if (m.t) a.dataset.title = m.t; }
     const slide = el.closest('.hh-slide');
     if (slide && (m.t || m.c)) {
+      const cat = m.c && !/^landing/i.test(m.c) ? m.c : '';   // "Landing Page" is a library group, not a caption
       if (m.t) slide.dataset.title = m.t;
-      if (m.c) slide.dataset.cat = m.c;
+      if (cat) slide.dataset.cat = cat;
       if (slide.classList.contains('on')) {
         const cap = document.querySelector('.hh-caption');
-        if (cap) { const s = cap.querySelector('small'), b = cap.querySelector('b'); if (s && m.c) s.textContent = m.c; if (b && m.t) b.textContent = m.t; }
+        if (cap) { const s = cap.querySelector('small'), b = cap.querySelector('b'); if (s && cat) s.textContent = cat; if (b && m.t) b.textContent = m.t; }
       }
     }
   };
